@@ -5,7 +5,7 @@ import Header from "./components/Header.jsx";
 import "./global.css";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "https://foundmet-backend.onrender.com";
+  import.meta.env.VITE_API_BASE_URL || "https://foundmet-backend.onrender.com/auth/create-account";
 
 // Explicit Steps Sequence
 const STEP_KEYS = [

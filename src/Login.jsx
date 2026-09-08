@@ -5,7 +5,8 @@ import Header from "./components/Header.jsx";
 import "./global.css";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "https://foundmet-backend.onrender.com";
+  import.meta.env.VITE_API_BASE_URL ||
+  "https://foundmet-backend.onrender.com/auth/login";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -30,12 +31,14 @@ export default function Login() {
       email: "alex@foundmet.io",
       role: "founder",
       hasProject: "yes",
-      projectDetails: "Building an AI-driven collaboration workspace for early-stage startup teams to find co-founders and track milestones.",
+      projectDetails:
+        "Building an AI-driven collaboration workspace for early-stage startup teams to find co-founders and track milestones.",
       projectLink: "https://foundmet.io",
       projectStatus: "development",
       lookingFor: ["cto", "cfo"],
       address: "Bangalore, India",
-      photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+      photo:
+        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
     };
     localStorage.setItem("foundmet_token", "demo_jwt_token_" + Date.now());
     localStorage.setItem("foundmet_user", JSON.stringify(demoUser));
@@ -95,7 +98,10 @@ export default function Login() {
             </div>
 
             {error && (
-              <div className="alert alert-danger py-2 px-3 small d-flex align-items-center gap-2 mb-3" role="alert">
+              <div
+                className="alert alert-danger py-2 px-3 small d-flex align-items-center gap-2 mb-3"
+                role="alert"
+              >
                 <i className="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
                 <div>{error}</div>
               </div>
@@ -122,7 +128,9 @@ export default function Login() {
 
               <div className="mb-4">
                 <div className="d-flex justify-content-between align-items-center mb-1">
-                  <label className="form-label fw-semibold mb-0">Password</label>
+                  <label className="form-label fw-semibold mb-0">
+                    Password
+                  </label>
                 </div>
                 <div className="input-group">
                   <span className="input-group-text bg-light border-end-0">
@@ -157,7 +165,10 @@ export default function Login() {
               >
                 {loading ? (
                   <>
-                    <span className="spinner-border spinner-border-sm" role="status"></span>
+                    <span
+                      className="spinner-border spinner-border-sm"
+                      role="status"
+                    ></span>
                     <span>Signing in...</span>
                   </>
                 ) : (
