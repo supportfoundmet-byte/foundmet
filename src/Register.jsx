@@ -5,7 +5,8 @@ import Header from "./components/Header.jsx";
 import "./global.css";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "https://foundemet-backend.onrender.com/auth/create-account";
+  import.meta.env.VITE_API_BASE_URL ||
+  "https://foundemet-backend.onrender.com/auth/create-account";
 
 // Explicit Steps Sequence
 const STEP_KEYS = [
@@ -67,7 +68,7 @@ export default function Register() {
       (key) =>
         key !== "projectStatus" &&
         key !== "projectDetails" &&
-        key !== "projectLink"
+        key !== "projectLink",
     );
   };
 
@@ -75,9 +76,7 @@ export default function Register() {
   const currentIndex = activeSteps.indexOf(currentStep);
   const totalSteps = activeSteps.length;
   // Progress percentage (review step is 100%)
-  const progressPercent = Math.round(
-    ((currentIndex + 1) / totalSteps) * 100
-  );
+  const progressPercent = Math.round(((currentIndex + 1) / totalSteps) * 100);
 
   // Auto focus input when step changes
   useEffect(() => {
@@ -174,7 +173,9 @@ export default function Register() {
         return false;
       }
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
-        setValidationError("Please enter a valid email address (e.g. name@domain.com).");
+        setValidationError(
+          "Please enter a valid email address (e.g. name@domain.com).",
+        );
         return false;
       }
     }
@@ -283,11 +284,15 @@ export default function Register() {
         data.append("image", imageFile);
       }
 
-      const res = await axios.post(`${API_BASE_URL}/auth/create-account`, data, {
-        headers: {
-          "Content-Type": "multipart/form-data",
+      const res = await axios.post(
+        `${API_BASE_URL}/auth/create-account`,
+        data,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
         },
-      });
+      );
 
       if (res.status === 201 || res.status === 200) {
         if (res.data?.accessToken) {
@@ -323,7 +328,9 @@ export default function Register() {
                 </div>
                 <h2 className="fw-bold mb-2">Welcome to FoundMet!</h2>
                 <p className="text-secondary mb-4">
-                  Awesome work, <strong className="text-main">{formData.name}</strong>! Your founder profile is now live.
+                  Awesome work,{" "}
+                  <strong className="text-main">{formData.name}</strong>! Your
+                  founder profile is now live.
                 </p>
 
                 {/* Founder Badge Card */}
@@ -333,17 +340,23 @@ export default function Register() {
                       src={
                         imagePreview ||
                         `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                          formData.name || "Founder"
+                          formData.name || "Founder",
                         )}&background=0B5CFF&color=fff&size=120`
                       }
                       alt="Avatar"
                       className="rounded-circle border"
-                      style={{ width: "52px", height: "52px", objectFit: "cover" }}
+                      style={{
+                        width: "52px",
+                        height: "52px",
+                        objectFit: "cover",
+                      }}
                     />
                     <div>
                       <h6 className="mb-0 fw-bold">{formData.name}</h6>
                       <span className="badge bg-primary text-white text-capitalize mt-1">
-                        {formData.role === "co-founder" ? "Co-Founder" : "Founder"}
+                        {formData.role === "co-founder"
+                          ? "Co-Founder"
+                          : "Founder"}
                       </span>
                       <small className="text-secondary d-block mt-1">
                         <i className="bi bi-geo-alt me-1"></i>
@@ -398,13 +411,20 @@ export default function Register() {
               </button>
               <div className="d-none d-sm-block">
                 <span className="text-secondary small fw-semibold">
-                  Step <span className="text-primary fw-bold">{currentIndex + 1}</span> of {totalSteps}
+                  Step{" "}
+                  <span className="text-primary fw-bold">
+                    {currentIndex + 1}
+                  </span>{" "}
+                  of {totalSteps}
                 </span>
               </div>
             </div>
 
             {/* Visual Progress Bar */}
-            <div className="flex-grow-1 mx-2 mx-md-4" style={{ maxWidth: "350px" }}>
+            <div
+              className="flex-grow-1 mx-2 mx-md-4"
+              style={{ maxWidth: "350px" }}
+            >
               <div className="progress" style={{ height: "6px" }}>
                 <div
                   className="progress-bar bg-primary transition-width"
@@ -434,11 +454,9 @@ export default function Register() {
       {/* Main Flow Grid */}
       <main className="container my-auto py-4 py-md-5 flex-grow-1 d-flex align-items-center">
         <div className="row w-100 justify-content-center align-items-center g-4">
-          
           {/* Question Screen (Left / Center) */}
           <div className="col-12 col-lg-7 col-xl-6">
             <div className="question-wrapper p-4 p-sm-5 bg-white rounded-4 border shadow-sm position-relative">
-              
               {/* Step indicator tag */}
               <div className="d-flex align-items-center justify-content-between mb-3">
                 <span className="badge bg-primary-subtle text-primary rounded-pill px-3 py-2 fw-semibold">
@@ -448,7 +466,10 @@ export default function Register() {
                 </span>
                 {currentStep !== "review" && (
                   <span className="text-muted small d-none d-sm-inline">
-                    Press <kbd className="bg-light text-secondary border px-1 rounded">Enter ↵</kbd>
+                    Press{" "}
+                    <kbd className="bg-light text-secondary border px-1 rounded">
+                      Enter ↵
+                    </kbd>
                   </span>
                 )}
               </div>
@@ -471,7 +492,8 @@ export default function Register() {
                     What is your full name?
                   </h2>
                   <p className="text-secondary mb-4">
-                    Let's start with how co-founders and collaborators will identify you.
+                    Let's start with how co-founders and collaborators will
+                    identify you.
                   </p>
                   <div className="mb-4">
                     <input
@@ -497,7 +519,10 @@ export default function Register() {
                   </h2>
                   <p className="text-secondary mb-4">
                     Nice to have you here,{" "}
-                    <strong className="text-primary">{formData.name || "Founder"}</strong>! We'll use this for your account.
+                    <strong className="text-primary">
+                      {formData.name || "Founder"}
+                    </strong>
+                    ! We'll use this for your account.
                   </p>
                   <div className="mb-4">
                     <input
@@ -541,7 +566,9 @@ export default function Register() {
                         onClick={() => setShowPassword(!showPassword)}
                         tabIndex={-1}
                       >
-                        <i className={`bi ${showPassword ? "bi-eye-slash" : "bi-eye"} fs-5`}></i>
+                        <i
+                          className={`bi ${showPassword ? "bi-eye-slash" : "bi-eye"} fs-5`}
+                        ></i>
                       </button>
                     </div>
 
@@ -551,12 +578,18 @@ export default function Register() {
                         <div className="progress" style={{ height: "6px" }}>
                           <div
                             className={`progress-bar ${passwordStrength.color}`}
-                            style={{ width: `${(passwordStrength.score / 4) * 100}%` }}
+                            style={{
+                              width: `${(passwordStrength.score / 4) * 100}%`,
+                            }}
                           ></div>
                         </div>
                         <div className="d-flex justify-content-between align-items-center mt-1">
-                          <small className="text-secondary">Password strength</small>
-                          <small className={`fw-bold ${passwordStrength.score >= 3 ? "text-success" : "text-warning"}`}>
+                          <small className="text-secondary">
+                            Password strength
+                          </small>
+                          <small
+                            className={`fw-bold ${passwordStrength.score >= 3 ? "text-success" : "text-warning"}`}
+                          >
                             {passwordStrength.label}
                           </small>
                         </div>
@@ -573,7 +606,8 @@ export default function Register() {
                     What is your founder role?
                   </h2>
                   <p className="text-secondary mb-4">
-                    Are you initiating your own venture, or ready to join as a co-founder?
+                    Are you initiating your own venture, or ready to join as a
+                    co-founder?
                   </p>
 
                   <div className="row g-3 mb-4">
@@ -582,9 +616,18 @@ export default function Register() {
                         className={`role-select-card p-4 text-center cursor-pointer ${
                           formData.role === "founder" ? "selected" : ""
                         }`}
-                        onClick={() => setFormData((prev) => ({ ...prev, role: "founder" }))}
+                        onClick={() =>
+                          setFormData((prev) => ({ ...prev, role: "founder" }))
+                        }
                       >
-                        <div className="role-icon mx-auto mb-3" style={{ width: "54px", height: "54px", fontSize: "24px" }}>
+                        <div
+                          className="role-icon mx-auto mb-3"
+                          style={{
+                            width: "54px",
+                            height: "54px",
+                            fontSize: "24px",
+                          }}
+                        >
                           <i className="bi bi-award-fill"></i>
                         </div>
                         <h4 className="fw-bold mb-1">Founder</h4>
@@ -599,9 +642,21 @@ export default function Register() {
                         className={`role-select-card p-4 text-center cursor-pointer ${
                           formData.role === "co-founder" ? "selected" : ""
                         }`}
-                        onClick={() => setFormData((prev) => ({ ...prev, role: "co-founder" }))}
+                        onClick={() =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            role: "co-founder",
+                          }))
+                        }
                       >
-                        <div className="role-icon mx-auto mb-3" style={{ width: "54px", height: "54px", fontSize: "24px" }}>
+                        <div
+                          className="role-icon mx-auto mb-3"
+                          style={{
+                            width: "54px",
+                            height: "54px",
+                            fontSize: "24px",
+                          }}
+                        >
                           <i className="bi bi-people-fill"></i>
                         </div>
                         <h4 className="fw-bold mb-1">Co-Founder</h4>
@@ -621,7 +676,8 @@ export default function Register() {
                     Where are you based?
                   </h2>
                   <p className="text-secondary mb-4">
-                    Founders love knowing your location for local meetups or remote work.
+                    Founders love knowing your location for local meetups or
+                    remote work.
                   </p>
                   <div className="mb-3">
                     <input
@@ -640,7 +696,13 @@ export default function Register() {
                   {/* Quick Pill presets */}
                   <div className="d-flex flex-wrap gap-2 align-items-center mb-4">
                     <small className="text-secondary me-1">Quick pick:</small>
-                    {["Bangalore, India", "Delhi NCR, India", "Mumbai, India", "Kolkata, India", "Remote"].map((city) => (
+                    {[
+                      "Bangalore, India",
+                      "Delhi NCR, India",
+                      "Mumbai, India",
+                      "Kolkata, India",
+                      "Remote",
+                    ].map((city) => (
                       <button
                         key={city}
                         type="button"
@@ -661,7 +723,8 @@ export default function Register() {
                     Who are you looking for?
                   </h2>
                   <p className="text-secondary mb-4">
-                    Select the key leadership roles you want to find or recruit (multi-select):
+                    Select the key leadership roles you want to find or recruit
+                    (multi-select):
                   </p>
 
                   <div className="d-flex flex-column gap-3 mb-4">
@@ -700,7 +763,9 @@ export default function Register() {
                             </div>
                             <div>
                               <h6 className="fw-bold mb-0">{item.title}</h6>
-                              <small className="text-secondary">{item.desc}</small>
+                              <small className="text-secondary">
+                                {item.desc}
+                              </small>
                             </div>
                           </div>
                           <div className="ms-2">
@@ -726,7 +791,8 @@ export default function Register() {
                     Do you have a project or startup?
                   </h2>
                   <p className="text-secondary mb-4">
-                    Whether it's an idea on paper or a live product, let us know!
+                    Whether it's an idea on paper or a live product, let us
+                    know!
                   </p>
 
                   <div className="row g-3 mb-4">
@@ -735,9 +801,21 @@ export default function Register() {
                         className={`role-select-card p-4 text-center cursor-pointer ${
                           formData.hasProject === "yes" ? "selected" : ""
                         }`}
-                        onClick={() => setFormData((prev) => ({ ...prev, hasProject: "yes" }))}
+                        onClick={() =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            hasProject: "yes",
+                          }))
+                        }
                       >
-                        <div className="role-icon mx-auto mb-3" style={{ width: "54px", height: "54px", fontSize: "24px" }}>
+                        <div
+                          className="role-icon mx-auto mb-3"
+                          style={{
+                            width: "54px",
+                            height: "54px",
+                            fontSize: "24px",
+                          }}
+                        >
                           <i className="bi bi-rocket-takeoff-fill"></i>
                         </div>
                         <h4 className="fw-bold mb-1">Yes, I have one</h4>
@@ -752,9 +830,18 @@ export default function Register() {
                         className={`role-select-card p-4 text-center cursor-pointer ${
                           formData.hasProject === "no" ? "selected" : ""
                         }`}
-                        onClick={() => setFormData((prev) => ({ ...prev, hasProject: "no" }))}
+                        onClick={() =>
+                          setFormData((prev) => ({ ...prev, hasProject: "no" }))
+                        }
                       >
-                        <div className="role-icon mx-auto mb-3" style={{ width: "54px", height: "54px", fontSize: "24px" }}>
+                        <div
+                          className="role-icon mx-auto mb-3"
+                          style={{
+                            width: "54px",
+                            height: "54px",
+                            fontSize: "24px",
+                          }}
+                        >
                           <i className="bi bi-search-heart-fill"></i>
                         </div>
                         <h4 className="fw-bold mb-1">No, exploring</h4>
@@ -774,7 +861,8 @@ export default function Register() {
                     What stage is your project in?
                   </h2>
                   <p className="text-secondary mb-4">
-                    Select the status that best describes where you are right now:
+                    Select the status that best describes where you are right
+                    now:
                   </p>
 
                   <div className="d-flex flex-column gap-3 mb-4">
@@ -802,7 +890,12 @@ export default function Register() {
                       return (
                         <div
                           key={stage.key}
-                          onClick={() => setFormData((prev) => ({ ...prev, projectStatus: stage.key }))}
+                          onClick={() =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              projectStatus: stage.key,
+                            }))
+                          }
                           className={`p-3 rounded-3 border role-select-card cursor-pointer d-flex align-items-center justify-content-between ${
                             isSelected ? "selected" : ""
                           }`}
@@ -813,7 +906,9 @@ export default function Register() {
                             </div>
                             <div>
                               <h6 className="fw-bold mb-0">{stage.label}</h6>
-                              <small className="text-secondary">{stage.desc}</small>
+                              <small className="text-secondary">
+                                {stage.desc}
+                              </small>
                             </div>
                           </div>
                           <i
@@ -837,13 +932,18 @@ export default function Register() {
                     Describe your project
                   </h2>
                   <p className="text-secondary mb-4">
-                    What problem are you solving? Briefly pitch your vision to attract the right people.
+                    What problem are you solving? Briefly pitch your vision to
+                    attract the right people.
                   </p>
 
                   <div className="mb-4">
                     <div className="d-flex justify-content-between mb-2">
-                      <small className="text-secondary">Summary & Problem Solved</small>
-                      <small className="text-secondary">{formData.projectDetails.length}/2000</small>
+                      <small className="text-secondary">
+                        Summary & Problem Solved
+                      </small>
+                      <small className="text-secondary">
+                        {formData.projectDetails.length}/2000
+                      </small>
                     </div>
                     <textarea
                       ref={inputRef}
@@ -899,26 +999,38 @@ export default function Register() {
                     Add your profile photo
                   </h2>
                   <p className="text-secondary mb-4">
-                    A friendly photo builds instant trust and increases connection responses by 5x.
+                    A friendly photo builds instant trust and increases
+                    connection responses by 5x.
                   </p>
 
                   <div className="p-4 bg-light rounded-4 border text-center mb-4">
-                    <div className="register-avatar-preview mx-auto mb-3" style={{ width: "96px", height: "96px" }}>
+                    <div
+                      className="register-avatar-preview mx-auto mb-3"
+                      style={{ width: "96px", height: "96px" }}
+                    >
                       <img
                         src={
                           imagePreview ||
                           `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                            formData.name || "Founder"
+                            formData.name || "Founder",
                           )}&background=0B5CFF&color=fff&size=192`
                         }
                         alt="Avatar preview"
                         className="rounded-circle border shadow-sm"
-                        style={{ width: "96px", height: "96px", objectFit: "cover" }}
+                        style={{
+                          width: "96px",
+                          height: "96px",
+                          objectFit: "cover",
+                        }}
                       />
                     </div>
 
                     <h5 className="fw-bold mb-1">
-                      {imageFile ? imageFile.name : (formData.name ? `${formData.name}'s Avatar` : "Profile Picture")}
+                      {imageFile
+                        ? imageFile.name
+                        : formData.name
+                          ? `${formData.name}'s Avatar`
+                          : "Profile Picture"}
                     </h5>
                     <p className="text-secondary small mb-3">
                       JPG, PNG, or WEBP (Max 5MB)
@@ -961,15 +1073,19 @@ export default function Register() {
                     Review your Founder Profile
                   </h2>
                   <p className="text-secondary mb-4">
-                    Everything looks ready! Review your information below before launching.
+                    Everything looks ready! Review your information below before
+                    launching.
                   </p>
 
                   <div className="card border p-3 rounded-3 bg-light mb-4">
                     {/* Section 1: Basic */}
                     <div className="d-flex justify-content-between align-items-center pb-2 border-bottom mb-2">
                       <div>
-                        <small className="text-secondary d-block">Full Name & Email</small>
-                        <strong>{formData.name}</strong> • <span className="text-secondary">{formData.email}</span>
+                        <small className="text-secondary d-block">
+                          Full Name & Email
+                        </small>
+                        <strong>{formData.name}</strong> •{" "}
+                        <span className="text-secondary">{formData.email}</span>
                       </div>
                       <button
                         type="button"
@@ -983,9 +1099,13 @@ export default function Register() {
                     {/* Section 2: Role & Location */}
                     <div className="d-flex justify-content-between align-items-center pb-2 border-bottom mb-2">
                       <div>
-                        <small className="text-secondary d-block">Role & Location</small>
+                        <small className="text-secondary d-block">
+                          Role & Location
+                        </small>
                         <span className="badge bg-primary text-white text-capitalize me-2">
-                          {formData.role === "co-founder" ? "Co-Founder" : "Founder"}
+                          {formData.role === "co-founder"
+                            ? "Co-Founder"
+                            : "Founder"}
                         </span>
                         <span>{formData.address}</span>
                       </div>
@@ -1001,17 +1121,24 @@ export default function Register() {
                     {/* Section 3: Looking For */}
                     <div className="d-flex justify-content-between align-items-center pb-2 border-bottom mb-2">
                       <div>
-                        <small className="text-secondary d-block">Looking For</small>
+                        <small className="text-secondary d-block">
+                          Looking For
+                        </small>
                         {formData.lookingFor.length > 0 ? (
                           <div className="d-flex gap-1 flex-wrap mt-1">
                             {formData.lookingFor.map((r) => (
-                              <span key={r} className="badge bg-secondary-subtle text-dark text-uppercase">
+                              <span
+                                key={r}
+                                className="badge bg-secondary-subtle text-dark text-uppercase"
+                              >
                                 {r}
                               </span>
                             ))}
                           </div>
                         ) : (
-                          <span className="text-muted small">Open / None specified</span>
+                          <span className="text-muted small">
+                            Open / None specified
+                          </span>
                         )}
                       </div>
                       <button
@@ -1026,7 +1153,9 @@ export default function Register() {
                     {/* Section 4: Project */}
                     <div className="d-flex justify-content-between align-items-start">
                       <div>
-                        <small className="text-secondary d-block">Project Details</small>
+                        <small className="text-secondary d-block">
+                          Project Details
+                        </small>
                         {formData.hasProject === "yes" ? (
                           <div>
                             <span className="badge bg-info-subtle text-info-emphasis text-capitalize me-2">
@@ -1036,14 +1165,19 @@ export default function Register() {
                               {formData.projectDetails || "No details provided"}
                             </small>
                             {formData.projectLink && (
-                              <small className="d-block text-primary text-truncate mt-1" style={{ maxWidth: "300px" }}>
+                              <small
+                                className="d-block text-primary text-truncate mt-1"
+                                style={{ maxWidth: "300px" }}
+                              >
                                 <i className="bi bi-link me-1"></i>
                                 {formData.projectLink}
                               </small>
                             )}
                           </div>
                         ) : (
-                          <span className="text-muted small">Exploring opportunities / Open to join</span>
+                          <span className="text-muted small">
+                            Exploring opportunities / Open to join
+                          </span>
                         )}
                       </div>
                       <button
@@ -1088,7 +1222,10 @@ export default function Register() {
                   >
                     {loading ? (
                       <>
-                        <span className="spinner-border spinner-border-sm" role="status"></span>
+                        <span
+                          className="spinner-border spinner-border-sm"
+                          role="status"
+                        ></span>
                         <span>Creating Profile...</span>
                       </>
                     ) : (
@@ -1104,7 +1241,8 @@ export default function Register() {
 
             <div className="text-center mt-3">
               <Link to="/login" className="text-secondary small">
-                Already registered? <span className="text-primary fw-semibold">Sign in here</span>
+                Already registered?{" "}
+                <span className="text-primary fw-semibold">Sign in here</span>
               </Link>
             </div>
           </div>
@@ -1133,7 +1271,7 @@ export default function Register() {
                       src={
                         imagePreview ||
                         `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                          formData.name || "Founder"
+                          formData.name || "Founder",
                         )}&background=0B5CFF&color=fff&size=100`
                       }
                       alt="Avatar"
@@ -1144,7 +1282,9 @@ export default function Register() {
                         {formData.name || "Your Name"}
                       </h3>
                       <p className="founder-role mb-0 text-capitalize">
-                        {formData.role === "co-founder" ? "Co-Founder" : "Founder"}
+                        {formData.role === "co-founder"
+                          ? "Co-Founder"
+                          : "Founder"}
                       </p>
                     </div>
                   </div>
@@ -1162,9 +1302,7 @@ export default function Register() {
 
                 {/* Project details */}
                 {formData.hasProject === "yes" && formData.projectDetails ? (
-                  <p className="founder-idea mt-3">
-                    {formData.projectDetails}
-                  </p>
+                  <p className="founder-idea mt-3">{formData.projectDetails}</p>
                 ) : (
                   <p className="founder-idea mt-3 text-muted fst-italic">
                     {formData.hasProject === "yes"
@@ -1176,7 +1314,9 @@ export default function Register() {
                 {/* Project Status */}
                 {formData.hasProject === "yes" && formData.projectStatus && (
                   <div className="mb-3">
-                    <small className="text-secondary d-block mb-1">Project Status</small>
+                    <small className="text-secondary d-block mb-1">
+                      Project Status
+                    </small>
                     <span className="skill-tag text-capitalize">
                       {formData.projectStatus}
                     </span>
@@ -1185,7 +1325,9 @@ export default function Register() {
 
                 {/* Looking For */}
                 <div className="looking-for mt-3">
-                  <small className="text-secondary d-block mb-2">Looking for</small>
+                  <small className="text-secondary d-block mb-2">
+                    Looking for
+                  </small>
                   {formData.lookingFor.length > 0 ? (
                     <div className="d-flex flex-wrap gap-2">
                       {formData.lookingFor.map((item) => (
@@ -1195,17 +1337,27 @@ export default function Register() {
                       ))}
                     </div>
                   ) : (
-                    <span className="text-muted small">No specific roles selected</span>
+                    <span className="text-muted small">
+                      No specific roles selected
+                    </span>
                   )}
                 </div>
 
                 {/* Preview Connect Button */}
                 <div className="d-flex gap-2 mt-4">
-                  <button className="btn btn-foundmet flex-grow-1" type="button" disabled>
+                  <button
+                    className="btn btn-foundmet flex-grow-1"
+                    type="button"
+                    disabled
+                  >
                     <i className="bi bi-person-plus me-2"></i>
                     Connect
                   </button>
-                  <button className="btn btn-light border" type="button" disabled>
+                  <button
+                    className="btn btn-light border"
+                    type="button"
+                    disabled
+                  >
                     <i className="bi bi-eye"></i>
                   </button>
                 </div>
