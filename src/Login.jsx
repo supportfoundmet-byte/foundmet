@@ -6,7 +6,7 @@ import "./global.css";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
-  "https://foundmet-backend.onrender.com/auth/login";
+  "https://foundemet-backend.onrender.com/auth/login";
 
 export default function Login() {
   const navigate = useNavigate();

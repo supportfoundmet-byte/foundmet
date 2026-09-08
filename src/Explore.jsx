@@ -7,7 +7,7 @@ import "./global.css";
 import axios from "axios";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "https://foundmet-backend.onrender.com/api/users";
+  import.meta.env.VITE_API_BASE_URL || "https://foundemet-backend.onrender.com/api/users";
 
 // Curated backup builders in case Render backend is cold-starting
 const FALLBACK_BUILDERS = [
