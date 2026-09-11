@@ -15,8 +15,15 @@ const api = axios.create({
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    const status = error.response?.status;
     if (!error.response && error.request) {
       error.userMessage = "Could not reach FoundMet. Check your connection and try again.";
+    } else if (status === 429) {
+      error.userMessage = "Too many attempts. Please wait a moment and try again.";
+    } else if (status >= 500) {
+      error.userMessage = "Something went wrong. Please try again.";
+    } else if (error.response?.data?.message) {
+      error.userMessage = error.response.data.message;
     }
     return Promise.reject(error);
   },

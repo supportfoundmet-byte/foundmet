@@ -128,6 +128,13 @@ export default function Header() {
                 <i className={`bi ${theme === "light" ? "bi-moon-stars-fill text-dark" : "bi-sun-fill text-warning"}`}></i>
               </button>
 
+              <Link
+                to="/superadmin"
+                className={`btn btn-sm rounded-pill px-3 ${isActive("/superadmin") ? "btn-dark" : "btn-outline-dark"}`}
+              >
+                Superadmin
+              </Link>
+
               {currentUser ? (
                 <div className="d-flex align-items-center gap-2">
                   <Link

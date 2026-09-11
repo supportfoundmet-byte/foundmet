@@ -107,31 +107,34 @@ export default function Dashboard() {
     api
       .get("/auth/me")
       .then(({ data }) => {
-        if (active && data?.user) {
-          setCurrentUser(data.user);
+        const user = data?.user || data?.data?.user;
+        if (active && user) {
+          setCurrentUser(user);
           setSettingsForm((previous) => ({
             ...previous,
-            name: data.user.name || "",
-            email: data.user.email || "",
-            phone: data.user.phoneNumber || "",
-            address: data.user.address || "",
-            role: data.user.role || "founder",
-            matchRole: data.user.matchRole || "co-founder",
-            canBring: data.user.canBring || [],
-            buildType: data.user.buildType || "not-sure",
-            commitment: data.user.commitment || "exploring",
-            projectDetails: data.user.projectDetails || "",
-            projectLink: data.user.projectLink || "",
-            projectStatus: data.user.projectStatus || "idea",
-            hasProject: data.user.hasProject || "no",
-            allowPhoneRequest: data.user.allowPhoneRequest !== false,
-            discoverableNearby: data.user.discoverableNearby !== false,
+            name: user.name || "",
+            email: user.email || "",
+            phone: user.phoneNumber || "",
+            address: user.address || "",
+            role: user.role || "founder",
+            matchRole: user.matchRole || "co-founder",
+            canBring: user.canBring || [],
+            buildType: user.buildType || "not-sure",
+            commitment: user.commitment || "exploring",
+            projectDetails: user.projectDetails || "",
+            projectLink: user.projectLink || "",
+            projectStatus: user.projectStatus || "idea",
+            hasProject: user.hasProject || "no",
+            allowPhoneRequest: user.allowPhoneRequest !== false,
+            discoverableNearby: user.discoverableNearby !== false,
           }));
-          localStorage.setItem("foundmet_user", JSON.stringify(data.user));
+          localStorage.setItem("foundmet_user", JSON.stringify(user));
         }
       })
       .catch((error) => {
-        if (error.response?.status === 401 || error.response?.status === 403) {
+        const code = error.response?.data?.errorCode;
+        const status = error.response?.status;
+        if (status === 401 || code === "ACCOUNT_BANNED" || code === "ACCOUNT_SUSPENDED" || code === "ACCOUNT_UNAVAILABLE") {
           localStorage.removeItem("foundmet_user");
           setCurrentUser(null);
           navigate("/login", { replace: true });
@@ -225,7 +228,7 @@ export default function Dashboard() {
         localStorage.setItem("foundmet_connections", JSON.stringify(statuses));
       })
       .catch((error) => {
-        if (error.response?.status === 401 || error.response?.status === 403) {
+        if (error.response?.status === 401) {
           localStorage.removeItem("foundmet_user");
           setCurrentUser(null);
           navigate("/login", { replace: true });

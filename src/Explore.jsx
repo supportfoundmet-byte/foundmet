@@ -11,6 +11,12 @@ import {
 import "./global.css";
 import api from "./services/api.js";
 import { notifyBrowser } from "./services/notifications.js";
+import {
+  connectionLabel,
+  friendlyError,
+  normalizeConnectionStatus,
+  statusesFromPayload,
+} from "./services/connectionState.js";
 
 const isMongoId = (value) => /^[a-f\d]{24}$/i.test(String(value));
 
@@ -19,7 +25,8 @@ export default function Explore() {
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [stageFilter, setStageFilter] = useState("all");
-  const [distanceFilter, setDistanceFilter] = useState("all"); // "all" | "50" | "80"
+  const [distanceFilter, setDistanceFilter] = useState("all"); // all | 10 | 25 | 50 | 100
+  const [skillFilter, setSkillFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [feedError, setFeedError] = useState("");
   const [selectedFounder, setSelectedFounder] = useState(null);
@@ -114,7 +121,7 @@ export default function Explore() {
       setLiveUserCoords(coords);
       setGpsActive(true);
       setSortByNearest(true);
-      showToast(`📍 Live GPS locked! Located nearest members (accuracy ±${coords.accuracy}m).`);
+      showToast("Approximate location updated for nearby founder matching.");
     } catch (err) {
       console.warn("GPS lookup failed:", err);
       let msg = "Could not activate GPS tracker.";
@@ -134,7 +141,7 @@ export default function Explore() {
       return;
     }
 
-    if (connections[founder._id] !== "connected") {
+    if (normalizeConnectionStatus(connections[founder._id]) !== "connected") {
       showToast(`You can chat once ${founder.name} accepts your connection request.`);
       return;
     }
@@ -157,6 +164,8 @@ export default function Explore() {
             lat: liveUserCoords?.lat,
             lng: liveUserCoords?.lng,
             radiusKm: distanceFilter === "all" ? undefined : Number(distanceFilter),
+            skill: skillFilter === "all" ? undefined : skillFilter,
+            stage: stageFilter === "all" ? undefined : stageFilter,
           },
           timeout: 8000,
         });
@@ -174,7 +183,7 @@ export default function Explore() {
     };
 
     fetchFounders();
-  }, [search]);
+  }, [search, distanceFilter, skillFilter, stageFilter, liveUserCoords?.lat, liveUserCoords?.lng]);
 
   useEffect(() => {
     if (!currentUser?._id) return undefined;
@@ -185,29 +194,17 @@ export default function Explore() {
         const { data } = await api.get("/api/v1/connections", { timeout: 8000 });
         if (!active || !data?.success) return;
 
-        const nextStatuses = {};
-        [...(data.connected || []), ...(data.sentRequests || []), ...(data.receivedRequests || [])]
-          .forEach((connection) => {
-            const otherUser = String(connection.fromUser?._id) === String(currentUser._id)
-              ? connection.toUser
-              : connection.fromUser;
-            if (otherUser?._id) {
-              nextStatuses[otherUser._id] = connection.status === "accepted" ? "connected" : "pending";
-            }
-            if (
-              notify &&
-              connection.toUser?._id &&
-              String(connection.toUser._id) === String(currentUser._id) &&
-              connection.status === "pending" &&
-              !seenConnectionNotifications.current.has(String(connection._id))
-            ) {
+        const nextStatuses = statusesFromPayload(data, currentUser._id);
+        setConnections(nextStatuses);
+        localStorage.setItem("foundmet_connections", JSON.stringify(nextStatuses));
+        if (notify) {
+          (data.receivedRequests || []).forEach((connection) => {
+            if (!seenConnectionNotifications.current.has(String(connection._id))) {
               seenConnectionNotifications.current.add(String(connection._id));
               notifyBrowser("New connection request", `${connection.fromUser?.name || "A founder"} wants to connect with you.`);
             }
           });
-
-        setConnections(nextStatuses);
-        localStorage.setItem("foundmet_connections", JSON.stringify(nextStatuses));
+        }
       } catch (error) {
         if (error.response?.status !== 401) {
           console.warn("Connection sync unavailable:", error.message);
@@ -230,13 +227,21 @@ export default function Explore() {
       return;
     }
 
-    const currentStatus = connections[founder._id];
+    const currentStatus = normalizeConnectionStatus(connections[founder._id]);
     if (currentStatus === "connected") {
-      showToast("You are already connected. Open your dashboard to message this founder.");
+      showToast("You are already connected with this founder.");
       return;
     }
-    if (currentStatus === "pending") {
+    if (currentStatus === "pending_sent" || currentStatus === "pending") {
       showToast("Your connection request is waiting for a response.");
+      return;
+    }
+    if (currentStatus === "pending_received") {
+      showToast("This founder already requested you. Open Dashboard to accept.");
+      return;
+    }
+    if (currentStatus === "blocked") {
+      showToast("You cannot connect with this founder.");
       return;
     }
     if (!isMongoId(founder._id)) {
@@ -248,7 +253,12 @@ export default function Explore() {
       const { data } = await api.post(`/api/v1/connections/request/${founder._id}`, {
         message: connectionNote.trim().slice(0, 500),
       });
-      const nextStatus = data.connection?.status === "accepted" ? "connected" : "pending";
+      const nextStatus =
+        data.state === "CONNECTED" || data.connection?.status === "accepted"
+          ? "connected"
+          : data.state === "PENDING_RECEIVED"
+            ? "pending_received"
+            : "pending_sent";
       const updated = { ...connections, [founder._id]: nextStatus };
       setConnections(updated);
       localStorage.setItem("foundmet_connections", JSON.stringify(updated));
@@ -256,14 +266,14 @@ export default function Explore() {
       showToast(data.message || `Connection request sent to ${founder.name}.`);
       notifyBrowser("Connection request sent", `Your request to ${founder.name} is pending.`);
     } catch (error) {
-    if (error.response?.status === 401 || error.response?.status === 403) {
+    if (error.response?.status === 401) {
       localStorage.removeItem("foundmet_user");
       showToast("Your session expired. Please sign in again.");
       setAuthPromptFounder(founder);
     } else if (error.response?.status === 429) {
       showToast("You have sent too many requests. Please try again shortly.");
     } else {
-      showToast(error.response?.data?.message || (error.request ? "Connection service is unavailable. Please retry." : "Could not send the connection request."));
+      showToast(error.response?.data?.message || error.userMessage || "Unable to send connection request. Please try again.");
     }
     } finally {
       setConnectionSending(false);
@@ -297,7 +307,7 @@ export default function Explore() {
       return;
     }
 
-    if (connections[founder._id] !== "connected") {
+    if (normalizeConnectionStatus(connections[founder._id]) !== "connected") {
       showToast("Connect with this founder first before requesting their mobile number.");
       return;
     }
@@ -381,15 +391,12 @@ export default function Explore() {
     }
 
     // Distance calculation
-    const dist = getDistanceToFounder(liveUserCoords, founder);
-    let matchesDistance = true;
-    if (distanceFilter === "50") {
-      matchesDistance = dist !== null && dist <= 50;
-    } else if (distanceFilter === "80") {
-      matchesDistance = dist !== null && dist <= 80;
-    }
+    const dist = founder.distanceKm ?? getDistanceToFounder(liveUserCoords, founder);
+    const radius = Number(distanceFilter);
+    const matchesDistance = distanceFilter === "all" || (Number.isFinite(dist) && dist <= radius);
+    const matchesSkill = skillFilter === "all" || (Array.isArray(founder.canBring) && founder.canBring.includes(skillFilter));
 
-    return matchesSearch && matchesTab && matchesStage && matchesDistance;
+    return matchesSearch && matchesTab && matchesStage && matchesDistance && matchesSkill;
   });
 
   // Sort by distance (nearest first) if requested
@@ -523,8 +530,10 @@ export default function Explore() {
               </span>
               {[
                 { key: "all", label: "All" },
-                { key: "50", label: "⚡ < 50 km" },
-                { key: "80", label: "🚗 < 80 km" },
+                { key: "10", label: "10 km" },
+                { key: "25", label: "25 km" },
+                { key: "50", label: "50 km" },
+                { key: "100", label: "100 km" },
               ].map((d) => (
                 <button
                   key={d.key}
@@ -655,11 +664,12 @@ export default function Explore() {
           {!loading && sortedFounders.length > 0 && (
             <div className="row g-4">
               {visibleFounders.map((founder) => {
-                const isConnected = connections[founder._id] === "connected";
-                const isPending = connections[founder._id] === "pending";
+                const status = normalizeConnectionStatus(connections[founder._id]);
+                const isConnected = status === "connected";
+                const isPending = status === "pending_sent" || status === "pending";
                 const isSelf = currentUser && currentUser._id === founder._id;
 
-                const distanceKm = getDistanceToFounder(liveUserCoords, founder);
+                const distanceKm = founder.distanceKm ?? getDistanceToFounder(liveUserCoords, founder);
                 const rating = ratingsCache[founder._id] || { averageStars: 5.0, totalRatings: 1 };
 
                 const lookingFor = Array.isArray(founder.lookingFor)
@@ -765,7 +775,7 @@ export default function Explore() {
                               }`}
                               style={{ fontSize: "12px" }}
                             >
-                              {isConnected ? "✓ Connected" : isPending ? "Requested" : "+ Connect"}
+                              {isConnected ? "Connected" : isPending ? "Request Sent" : connectionLabel(status) === "Respond" ? "Respond" : "+ Connect"}
                             </button>
 
                             {isConnected && (

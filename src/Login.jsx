@@ -36,16 +36,21 @@ export default function Login() {
         password: formData.password,
       });
 
-      if (res.data?.user) {
-        localStorage.setItem("foundmet_user", JSON.stringify(res.data.user));
+      const user = res.data?.user || res.data?.data?.user;
+      if (!user) {
+        setError("Could not start your session. Please try again.");
+        return;
       }
-
+      localStorage.setItem("foundmet_user", JSON.stringify(user));
       navigate("/dashboard");
     } catch (err) {
-      console.error("Login error:", err);
+      const status = err.response?.status;
       const msg =
         err.response?.data?.message ||
-        "Login failed. Please verify your credentials and try again.";
+        err.userMessage ||
+        (status === 403
+          ? "This account cannot sign in right now."
+          : "Login failed. Please verify your credentials and try again.");
       setError(msg);
     } finally {
       setLoading(false);

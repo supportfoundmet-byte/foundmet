@@ -42,7 +42,7 @@ export default function Admin() {
     let cancelled = false;
     api.get("/admin/session")
       .then(({ data: result }) => {
-        if (!cancelled) setAdmin(result.admin);
+        if (!cancelled) setAdmin(result.admin || result.data?.admin || null);
       })
       .catch(() => {
         if (!cancelled) setAdmin(null);
@@ -91,7 +91,9 @@ export default function Admin() {
     setMessage({ type: "", text: "" });
     try {
       const { data: result } = await api.post("/admin/login", credentials);
-      setAdmin(result.admin);
+      const signedIn = result.admin || result.data?.admin;
+      if (!signedIn) throw new Error("Could not start the Superadmin session.");
+      setAdmin(signedIn);
       setMessage({ type: "success", text: "Signed in securely." });
     } catch (error) {
       setMessage({ type: "danger", text: error.response?.data?.message || "Could not sign in." });
