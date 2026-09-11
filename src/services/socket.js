@@ -1,7 +1,8 @@
 import { io } from "socket.io-client";
 
-const SOCKET_URL =
-  import.meta.env.VITE_API_BASE_URL || "https://foundmet-backend.onrender.com";
+const SOCKET_URL = (
+  import.meta.env.VITE_API_BASE_URL || "https://foundmet-backend-aoi6.onrender.com"
+).replace(/\/+$/, "");
 
 let socketInstance = null;
 
