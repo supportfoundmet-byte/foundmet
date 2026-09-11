@@ -93,6 +93,8 @@ export default function Admin() {
       const { data: result } = await api.post("/admin/login", credentials);
       const signedIn = result.admin || result.data?.admin;
       if (!signedIn) throw new Error("Could not start the Superadmin session.");
+      const accessToken = result.accessToken || result.data?.accessToken;
+      if (accessToken) sessionStorage.setItem("foundmet_admin_token", accessToken);
       setAdmin(signedIn);
       setMessage({ type: "success", text: "Signed in securely." });
     } catch (error) {
@@ -182,7 +184,7 @@ export default function Admin() {
         <div className="admin-sidebar-footer">
           <Link className="admin-sidebar-link" to="/"><i className="bi bi-house" /> Open FoundMet</Link>
           <button onClick={() => run(loadData, "Data refreshed.")} disabled={busy}><i className="bi bi-arrow-clockwise" /> Refresh data</button>
-          <button className="text-danger" onClick={async () => { try { await api.post("/admin/logout"); } finally { setAdmin(null); } }}><i className="bi bi-box-arrow-left" /> Log out</button>
+          <button className="text-danger" onClick={async () => { try { await api.post("/admin/logout"); } finally { sessionStorage.removeItem("foundmet_admin_token"); setAdmin(null); } }}><i className="bi bi-box-arrow-left" /> Log out</button>
         </div>
       </aside>
       <div className="admin-main">

@@ -353,6 +353,8 @@ export default function Register() {
       );
 
       if (res.status === 201 || res.status === 200) {
+        const accessToken = res.data?.accessToken || res.data?.data?.accessToken;
+        if (accessToken) sessionStorage.setItem("foundmet_access_token", accessToken);
         if (res.data?.user) {
           localStorage.setItem("foundmet_user", JSON.stringify(res.data.user));
         }

@@ -41,6 +41,8 @@ export default function Login() {
         setError("Could not start your session. Please try again.");
         return;
       }
+      const accessToken = res.data?.accessToken || res.data?.data?.accessToken;
+      if (accessToken) sessionStorage.setItem("foundmet_access_token", accessToken);
       localStorage.setItem("foundmet_user", JSON.stringify(user));
       navigate("/dashboard");
     } catch (err) {

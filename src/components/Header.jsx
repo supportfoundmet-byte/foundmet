@@ -45,6 +45,7 @@ export default function Header() {
   const handleLogout = () => {
     api.post("/auth/logout").catch(() => {});
     localStorage.removeItem("foundmet_user");
+    sessionStorage.removeItem("foundmet_access_token");
     setSessionKey((prev) => prev + 1);
     window.location.href = "/login";
   };

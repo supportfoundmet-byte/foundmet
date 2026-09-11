@@ -261,6 +261,7 @@ export default function Dashboard() {
     api.post("/auth/logout").catch(() => {});
     disconnectSocket();
     localStorage.removeItem("foundmet_user");
+    sessionStorage.removeItem("foundmet_access_token");
     setCurrentUser(null);
     navigate("/login");
   };
