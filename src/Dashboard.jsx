@@ -61,7 +61,8 @@ export default function Dashboard() {
               title: "AI Co-Founder Matchmaking",
               category: "Productivity",
               status: "Validating",
-              notes: "Algorithm matching complementary skills, founder stage, and proximity radius within 50-80 km.",
+              notes:
+                "Algorithm matching complementary skills, founder stage, and proximity radius within 50-80 km.",
             },
           ];
     } catch {
@@ -103,7 +104,8 @@ export default function Dashboard() {
 
   useEffect(() => {
     let active = true;
-    api.get("/auth/me")
+    api
+      .get("/auth/me")
       .then(({ data }) => {
         if (active && data?.user) {
           setCurrentUser(data.user);
@@ -145,25 +147,37 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!currentUser?._id) return undefined;
-    api.get("/api/v1/posts")
+    api
+      .get("/api/v1/posts")
       .then(({ data }) => setPosts(data.posts || []))
-      .catch((error) => console.warn("Posts unavailable:", error.response?.data?.message || error.message));
+      .catch((error) =>
+        console.warn(
+          "Posts unavailable:",
+          error.response?.data?.message || error.message,
+        ),
+      );
     return undefined;
   }, [currentUser?._id]);
 
   useEffect(() => {
     if (!currentUser?._id) return undefined;
     let active = true;
-    api.get("/api/v1/connections", { timeout: 8000 })
+    api
+      .get("/api/v1/connections", { timeout: 8000 })
       .then(({ data }) => {
         if (!active || !data?.success) return;
         setConnectionError("");
-        const profiles = (data.connected || []).map((connection) => {
-          const profile = String(connection.fromUser?._id) === String(currentUser._id)
-            ? connection.toUser
-            : connection.fromUser;
-          return profile ? { ...profile, connectionId: connection._id } : null;
-        }).filter(Boolean);
+        const profiles = (data.connected || [])
+          .map((connection) => {
+            const profile =
+              String(connection.fromUser?._id) === String(currentUser._id)
+                ? connection.toUser
+                : connection.fromUser;
+            return profile
+              ? { ...profile, connectionId: connection._id }
+              : null;
+          })
+          .filter(Boolean);
         setConnectionProfiles(profiles);
         setReceivedRequests(data.receivedRequests || []);
         setConnectionNotifications([
@@ -184,18 +198,29 @@ export default function Dashboard() {
         ]);
         if (data.receivedRequests?.length) {
           const newest = data.receivedRequests[0];
-          notifyBrowser("New connection request", `${newest.fromUser?.name || "A founder"} wants to connect with you.`);
+          notifyBrowser(
+            "New connection request",
+            `${newest.fromUser?.name || "A founder"} wants to connect with you.`,
+          );
         }
         const statuses = {};
         (data.sentRequests || []).forEach((connection) => {
-          const other = String(connection.fromUser?._id) === String(currentUser._id) ? connection.toUser : connection.fromUser;
+          const other =
+            String(connection.fromUser?._id) === String(currentUser._id)
+              ? connection.toUser
+              : connection.fromUser;
           if (other?._id) statuses[other._id] = "pending";
         });
         (data.receivedRequests || []).forEach((connection) => {
-          const other = String(connection.fromUser?._id) === String(currentUser._id) ? connection.toUser : connection.fromUser;
+          const other =
+            String(connection.fromUser?._id) === String(currentUser._id)
+              ? connection.toUser
+              : connection.fromUser;
           if (other?._id) statuses[other._id] = "pending";
         });
-        profiles.forEach((profile) => { statuses[profile._id] = "connected"; });
+        profiles.forEach((profile) => {
+          statuses[profile._id] = "connected";
+        });
         setConnections(statuses);
         localStorage.setItem("foundmet_connections", JSON.stringify(statuses));
       })
@@ -206,10 +231,15 @@ export default function Dashboard() {
           navigate("/login", { replace: true });
           return;
         }
-        setConnectionError(error.response?.data?.message || "Connections are temporarily unavailable.");
+        setConnectionError(
+          error.response?.data?.message ||
+            "Connections are temporarily unavailable.",
+        );
       });
-    return () => { active = false; };
-      }, [currentUser?._id, navigate]);
+    return () => {
+      active = false;
+    };
+  }, [currentUser?._id, navigate]);
 
   // Chat & Rating modals
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -233,11 +263,15 @@ export default function Dashboard() {
   };
 
   const removeConnection = async (id, name) => {
-    const profile = connectionProfiles.find((item) => String(item._id) === String(id));
+    const profile = connectionProfiles.find(
+      (item) => String(item._id) === String(id),
+    );
     if (!profile?.connectionId) return;
     try {
       await api.delete(`/api/v1/connections/${profile.connectionId}`);
-      setConnectionProfiles((previous) => previous.filter((item) => String(item._id) !== String(id)));
+      setConnectionProfiles((previous) =>
+        previous.filter((item) => String(item._id) !== String(id)),
+      );
       setConnections((previous) => {
         const updated = { ...previous };
         delete updated[id];
@@ -247,7 +281,9 @@ export default function Dashboard() {
       if (String(activeChatContact?._id) === String(id)) setIsChatOpen(false);
       showToast(`Removed connection with ${name}`);
     } catch (error) {
-      showToast(error.response?.data?.message || "Could not remove connection.");
+      showToast(
+        error.response?.data?.message || "Could not remove connection.",
+      );
     }
   };
 
@@ -269,21 +305,40 @@ export default function Dashboard() {
   const respondToConnection = async (connectionId, status) => {
     try {
       await api.put(`/api/v1/connections/${connectionId}`, { status });
-      setReceivedRequests((previous) => previous.filter((item) => item._id !== connectionId));
-      showToast(status === "accepted" ? "Connection accepted. You can now message them." : "Connection request declined.");
+      setReceivedRequests((previous) =>
+        previous.filter((item) => item._id !== connectionId),
+      );
+      showToast(
+        status === "accepted"
+          ? "Connection accepted. You can now message them."
+          : "Connection request declined.",
+      );
       if (status === "accepted") {
-        const { data } = await api.get("/api/v1/connections", { timeout: 8000 });
-        const profiles = (data.connected || []).map((connection) => {
-          const profile = String(connection.fromUser?._id) === String(currentUser._id) ? connection.toUser : connection.fromUser;
-          return profile ? { ...profile, connectionId: connection._id } : null;
-        }).filter(Boolean);
+        const { data } = await api.get("/api/v1/connections", {
+          timeout: 8000,
+        });
+        const profiles = (data.connected || [])
+          .map((connection) => {
+            const profile =
+              String(connection.fromUser?._id) === String(currentUser._id)
+                ? connection.toUser
+                : connection.fromUser;
+            return profile
+              ? { ...profile, connectionId: connection._id }
+              : null;
+          })
+          .filter(Boolean);
         setConnectionProfiles(profiles);
         const statuses = {};
-        profiles.forEach((profile) => { statuses[profile._id] = "connected"; });
+        profiles.forEach((profile) => {
+          statuses[profile._id] = "connected";
+        });
         setConnections(statuses);
       }
     } catch (error) {
-      showToast(error.response?.data?.message || "Could not update connection request.");
+      showToast(
+        error.response?.data?.message || "Could not update connection request.",
+      );
     }
   };
 
@@ -299,29 +354,34 @@ export default function Dashboard() {
     if (!currentUser) return;
 
     try {
-     const { data } = await api.patch("/auth/me", {
-      hasProject: "yes",
-      projectDetails: projectForm.details.trim(),
-      projectStatus: projectForm.status,
-      projectLink: projectForm.link.trim(),
-     });
-     setCurrentUser(data.user);
-     localStorage.setItem("foundmet_user", JSON.stringify(data.user));
-     showToast("Project saved.");
+      const { data } = await api.patch("/auth/me", {
+        hasProject: "yes",
+        projectDetails: projectForm.details.trim(),
+        projectStatus: projectForm.status,
+        projectLink: projectForm.link.trim(),
+      });
+      setCurrentUser(data.user);
+      localStorage.setItem("foundmet_user", JSON.stringify(data.user));
+      showToast("Project saved.");
     } catch (error) {
-     showToast(error.response?.data?.message || "Could not save project.");
+      showToast(error.response?.data?.message || "Could not save project.");
     }
   };
 
   const handleDeleteProject = async () => {
     try {
-     const { data } = await api.patch("/auth/me", { hasProject: "no", projectDetails: "", projectLink: "", projectStatus: null });
-     setCurrentUser(data.user);
-     setProjectForm({ details: "", status: "development", link: "" });
-     localStorage.setItem("foundmet_user", JSON.stringify(data.user));
-     showToast("Project removed.");
+      const { data } = await api.patch("/auth/me", {
+        hasProject: "no",
+        projectDetails: "",
+        projectLink: "",
+        projectStatus: null,
+      });
+      setCurrentUser(data.user);
+      setProjectForm({ details: "", status: "development", link: "" });
+      localStorage.setItem("foundmet_user", JSON.stringify(data.user));
+      showToast("Project removed.");
     } catch (error) {
-     showToast(error.response?.data?.message || "Could not remove project.");
+      showToast(error.response?.data?.message || "Could not remove project.");
     }
   };
 
@@ -330,28 +390,31 @@ export default function Dashboard() {
     e.preventDefault();
     if (!currentUser) return;
 
-    api.patch("/auth/me", {
-      name: settingsForm.name.trim(),
-      address: settingsForm.address.trim(),
-      phoneNumber: settingsForm.phone.trim(),
-      role: settingsForm.role,
-      matchRole: settingsForm.matchRole,
-      canBring: settingsForm.canBring,
-      buildType: settingsForm.buildType,
-      commitment: settingsForm.commitment,
-      projectDetails: settingsForm.projectDetails,
-      projectLink: settingsForm.projectLink,
-      projectStatus: settingsForm.projectStatus,
-      hasProject: settingsForm.hasProject,
-      allowPhoneRequest: settingsForm.allowPhoneRequest,
-      discoverableNearby: settingsForm.discoverableNearby,
-    }).then(({ data }) => {
-      setCurrentUser(data.user);
-      localStorage.setItem("foundmet_user", JSON.stringify(data.user));
-      showToast("Profile settings saved successfully!");
-    }).catch((error) => {
-      showToast(error.response?.data?.message || "Could not save settings.");
-    });
+    api
+      .patch("/auth/me", {
+        name: settingsForm.name.trim(),
+        address: settingsForm.address.trim(),
+        phoneNumber: settingsForm.phone.trim(),
+        role: settingsForm.role,
+        matchRole: settingsForm.matchRole,
+        canBring: settingsForm.canBring,
+        buildType: settingsForm.buildType,
+        commitment: settingsForm.commitment,
+        projectDetails: settingsForm.projectDetails,
+        projectLink: settingsForm.projectLink,
+        projectStatus: settingsForm.projectStatus,
+        hasProject: settingsForm.hasProject,
+        allowPhoneRequest: settingsForm.allowPhoneRequest,
+        discoverableNearby: settingsForm.discoverableNearby,
+      })
+      .then(({ data }) => {
+        setCurrentUser(data.user);
+        localStorage.setItem("foundmet_user", JSON.stringify(data.user));
+        showToast("Profile settings saved successfully!");
+      })
+      .catch((error) => {
+        showToast(error.response?.data?.message || "Could not save settings.");
+      });
   };
 
   // Add new startup idea
@@ -404,7 +467,13 @@ export default function Dashboard() {
   const handleLikePost = async (post) => {
     try {
       const { data } = await api.post(`/api/v1/posts/${post._id}/like`);
-      setPosts((previous) => previous.map((item) => item._id === post._id ? { ...item, liked: data.liked, likeCount: data.likeCount } : item));
+      setPosts((previous) =>
+        previous.map((item) =>
+          item._id === post._id
+            ? { ...item, liked: data.liked, likeCount: data.likeCount }
+            : item,
+        ),
+      );
     } catch (error) {
       showToast(error.response?.data?.message || "Could not update like.");
     }
@@ -417,7 +486,11 @@ export default function Dashboard() {
     return (
       <div className="min-vh-100 bg-background d-flex align-items-center justify-content-center">
         <div className="text-center">
-          <div className="spinner-border text-primary mb-3" role="status" aria-label="Loading dashboard"></div>
+          <div
+            className="spinner-border text-primary mb-3"
+            role="status"
+            aria-label="Loading dashboard"
+          ></div>
           <p className="small text-secondary mb-0">Loading your workspace</p>
         </div>
       </div>
@@ -429,19 +502,29 @@ export default function Dashboard() {
       <div className="dashboard-page min-vh-100 bg-background d-flex flex-column">
         <Header />
         <div className="container my-auto py-5 text-center">
-          <div className="card foundmet-card border-0 shadow-sm p-4 p-md-5 mx-auto bg-white" style={{ maxWidth: "480px" }}>
+          <div
+            className="card foundmet-card border-0 shadow-sm p-4 p-md-5 mx-auto bg-white"
+            style={{ maxWidth: "480px" }}
+          >
             <div className="rounded-circle bg-primary-subtle text-primary d-inline-flex p-3 mx-auto mb-3">
               <i className="bi bi-person-lock fs-1"></i>
             </div>
             <h3 className="fw-bold mb-2">Founder Dashboard</h3>
             <p className="text-secondary small mb-4">
-              Please sign in to access your startup milestones, connections, and live messages.
+              Please sign in to access your startup milestones, connections, and
+              live messages.
             </p>
             <div className="d-grid gap-2">
-              <Link to="/login" className="btn btn-foundmet py-2 rounded-pill fw-bold">
+              <Link
+                to="/login"
+                className="btn btn-foundmet py-2 rounded-pill fw-bold"
+              >
                 Sign In to Your Account
               </Link>
-              <Link to="/register" className="btn btn-outline-primary py-2 rounded-pill fw-semibold">
+              <Link
+                to="/register"
+                className="btn btn-outline-primary py-2 rounded-pill fw-semibold"
+              >
                 Create Founder Profile
               </Link>
             </div>
@@ -473,23 +556,37 @@ export default function Dashboard() {
 
       <div className="container-fluid flex-grow-1 px-lg-4 py-4">
         {connectionError && (
-          <div className="alert alert-warning d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3" role="alert">
-            <span><i className="bi bi-wifi-off me-2" />{connectionError}</span>
-            <button type="button" className="btn btn-sm btn-warning" onClick={() => window.location.reload()}>Retry</button>
+          <div
+            className="alert alert-warning d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3"
+            role="alert"
+          >
+            <span>
+              <i className="bi bi-wifi-off me-2" />
+              {connectionError}
+            </span>
+            <button
+              type="button"
+              className="btn btn-sm btn-warning"
+              onClick={() => window.location.reload()}
+            >
+              Retry
+            </button>
           </div>
         )}
         <div className="row g-4">
-          
           {/* ================= SIDEBAR ================= */}
           <div className="col-12 col-lg-3 col-xl-2">
-            <div className="dashboard-sidebar card foundmet-card border-0 shadow-sm p-3 sticky-top bg-white" style={{ top: "85px" }}>
+            <div
+              className="dashboard-sidebar card foundmet-card border-0 shadow-sm p-3 sticky-top bg-white"
+              style={{ top: "85px" }}
+            >
               {/* Profile Card */}
               <div className="text-center pb-3 border-bottom mb-3">
                 <img
                   src={
                     currentUser.photo ||
                     `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                      currentUser.name || "Founder"
+                      currentUser.name || "Founder",
                     )}&background=0B5CFF&color=fff&size=100`
                   }
                   alt={currentUser.name}
@@ -507,15 +604,52 @@ export default function Dashboard() {
               </div>
 
               {/* Menu Links */}
-              <nav className="dashboard-menu nav flex-column gap-1" aria-label="Dashboard sections">
+              <nav
+                className="dashboard-menu nav flex-column gap-1"
+                aria-label="Dashboard sections"
+              >
                 {[
-                  { key: "overview", label: "Overview", icon: "bi-speedometer2" },
-                  { key: "posts", label: "Posts", icon: "bi-pencil-square", count: posts.length },
-                  { key: "connections", label: "Connections", icon: "bi-people", count: totalConnectionsCount },
-                  { key: "messages", label: "Messages / Chat", icon: "bi-chat-dots-fill" },
-                  { key: "projects", label: "My Project", icon: "bi-rocket-takeoff" },
-                  { key: "ideas", label: "Startup Ideas", icon: "bi-lightbulb", count: ideas.length },
-                  { key: "notifications", label: "Alerts", icon: "bi-bell", count: connectionNotifications.length + (currentUser.congratulations?.length || 0) },
+                  {
+                    key: "overview",
+                    label: "Overview",
+                    icon: "bi-speedometer2",
+                  },
+                  {
+                    key: "posts",
+                    label: "Posts",
+                    icon: "bi-pencil-square",
+                    count: posts.length,
+                  },
+                  {
+                    key: "connections",
+                    label: "Connections",
+                    icon: "bi-people",
+                    count: totalConnectionsCount,
+                  },
+                  {
+                    key: "messages",
+                    label: "Messages / Chat",
+                    icon: "bi-chat-dots-fill",
+                  },
+                  {
+                    key: "projects",
+                    label: "My Project",
+                    icon: "bi-rocket-takeoff",
+                  },
+                  {
+                    key: "ideas",
+                    label: "Startup Ideas",
+                    icon: "bi-lightbulb",
+                    count: ideas.length,
+                  },
+                  {
+                    key: "notifications",
+                    label: "Alerts",
+                    icon: "bi-bell",
+                    count:
+                      connectionNotifications.length +
+                      (currentUser.congratulations?.length || 0),
+                  },
                   { key: "settings", label: "Settings", icon: "bi-gear" },
                 ].map((item) => (
                   <button
@@ -533,7 +667,10 @@ export default function Dashboard() {
                       <span className="small">{item.label}</span>
                     </div>
                     {item.count !== undefined && (
-                      <span className={`badge rounded-pill ${activeTab === item.key ? "bg-white text-primary" : "bg-primary text-white"}`} style={{ fontSize: "10px" }}>
+                      <span
+                        className={`badge rounded-pill ${activeTab === item.key ? "bg-white text-primary" : "bg-primary text-white"}`}
+                        style={{ fontSize: "10px" }}
+                      >
                         {item.count}
                       </span>
                     )}
@@ -564,7 +701,6 @@ export default function Dashboard() {
 
           {/* ================= MAIN CONTENT ================= */}
           <div className="col-12 col-lg-9 col-xl-10">
-            
             {/* Top Welcome Hero */}
             <div
               className="p-4 rounded-4 text-white mb-4 position-relative overflow-hidden shadow-sm"
@@ -587,7 +723,10 @@ export default function Dashboard() {
                   </p>
                 </div>
                 <div className="col-md-4 text-md-end mt-3 mt-md-0">
-                  <Link to="/explore" className="btn btn-light btn-sm rounded-pill fw-bold text-primary px-4 shadow-sm">
+                  <Link
+                    to="/explore"
+                    className="btn btn-light btn-sm rounded-pill fw-bold text-primary px-4 shadow-sm"
+                  >
                     <i className="bi bi-search me-1"></i> Discover Founders
                   </Link>
                 </div>
@@ -625,7 +764,9 @@ export default function Dashboard() {
                         <i className="bi bi-geo-alt-fill fs-5"></i>
                       </div>
                       <h3 className="fw-bold mb-0">N/A</h3>
-                      <small className="text-secondary">Nearby (&lt;80 km)</small>
+                      <small className="text-secondary">
+                        Nearby (&lt;80 km)
+                      </small>
                     </div>
                   </div>
 
@@ -634,18 +775,48 @@ export default function Dashboard() {
                       <div className="role-icon mx-auto mb-2 bg-warning-subtle text-warning">
                         <i className="bi bi-telephone-check-fill fs-5"></i>
                       </div>
-                      <h3 className="fw-bold mb-0">{Object.keys(sharedPhones).length}</h3>
+                      <h3 className="fw-bold mb-0">
+                        {Object.keys(sharedPhones).length}
+                      </h3>
                       <small className="text-secondary">Contacts Shared</small>
                     </div>
                   </div>
                 </div>
                 {receivedRequests.length > 0 && (
                   <div className="card border-0 shadow-sm p-3 mt-3">
-                    <h6 className="fw-bold mb-3"><i className="bi bi-person-plus text-primary me-2"></i>Connection requests</h6>
+                    <h6 className="fw-bold mb-3">
+                      <i className="bi bi-person-plus text-primary me-2"></i>
+                      Connection requests
+                    </h6>
                     {receivedRequests.map((request) => (
-                      <div className="border-top py-3 d-flex flex-wrap align-items-center justify-content-between gap-2" key={request._id}>
-                        <div><strong>{request.fromUser?.name || "Founder"}</strong><small className="d-block text-secondary">{request.message || "Wants to connect with you."}</small></div>
-                        <div className="d-flex gap-2"><button className="btn btn-sm btn-primary rounded-pill" onClick={() => respondToConnection(request._id, "accepted")}>Accept</button><button className="btn btn-sm btn-outline-secondary rounded-pill" onClick={() => respondToConnection(request._id, "rejected")}>Ignore</button></div>
+                      <div
+                        className="border-top py-3 d-flex flex-wrap align-items-center justify-content-between gap-2"
+                        key={request._id}
+                      >
+                        <div>
+                          <strong>{request.fromUser?.name || "Founder"}</strong>
+                          <small className="d-block text-secondary">
+                            {request.message || "Wants to connect with you."}
+                          </small>
+                        </div>
+                        <div className="d-flex gap-2">
+                          <button
+                            className="btn btn-sm btn-primary rounded-pill"
+                            onClick={() =>
+                              respondToConnection(request._id, "accepted")
+                            }
+                          >
+                            Accept
+                          </button>
+                          <button
+                            className="btn btn-sm btn-outline-secondary rounded-pill"
+                            onClick={() =>
+                              respondToConnection(request._id, "rejected")
+                            }
+                          >
+                            Ignore
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -658,7 +829,10 @@ export default function Dashboard() {
                       <i className="bi bi-people text-primary me-2"></i>
                       Connected Founders
                     </h5>
-                    <Link to="/explore" className="btn btn-sm btn-outline-primary rounded-pill">
+                    <Link
+                      to="/explore"
+                      className="btn btn-sm btn-outline-primary rounded-pill"
+                    >
                       Find More
                     </Link>
                   </div>
@@ -676,7 +850,13 @@ export default function Dashboard() {
                       <tbody>
                         {connectionProfiles.length === 0 && (
                           <tr>
-                            <td colSpan="4" className="text-center text-secondary py-4">No accepted connections yet. Discover founders to start chatting.</td>
+                            <td
+                              colSpan="4"
+                              className="text-center text-secondary py-4"
+                            >
+                              No accepted connections yet. Discover founders to
+                              start chatting.
+                            </td>
                           </tr>
                         )}
                         {connectionProfiles.map((founder) => {
@@ -692,33 +872,46 @@ export default function Dashboard() {
                                     }
                                     alt={founder.name}
                                     className="rounded-circle border"
-                                    style={{ width: "36px", height: "36px", objectFit: "cover" }}
+                                    style={{
+                                      width: "36px",
+                                      height: "36px",
+                                      objectFit: "cover",
+                                    }}
                                   />
                                   <div>
-                                    <strong className="d-block text-main small">{founder.name}</strong>
-                                    <span className="badge bg-primary-subtle text-primary text-capitalize" style={{ fontSize: "9px" }}>
+                                    <strong className="d-block text-main small">
+                                      {founder.name}
+                                    </strong>
+                                    <span
+                                      className="badge bg-primary-subtle text-primary text-capitalize"
+                                      style={{ fontSize: "9px" }}
+                                    >
                                       {founder.role}
                                     </span>
                                   </div>
                                 </div>
                               </td>
                               <td>
-                                <small className="text-secondary">{founder.address}</small>
+                                <small className="text-secondary">
+                                  {founder.address}
+                                </small>
                               </td>
                               <td>
                                 {isShared ? (
                                   <div className="d-flex align-items-center gap-2">
-                                    <strong className="text-success small">{founder.phoneNumber}</strong>
+                                    <strong className="text-success small">
+                                      {founder.phoneNumber}
+                                    </strong>
                                     {founder.phoneNumber && (
-                                    <a
-                                      href={`https://wa.me/${String(founder.phoneNumber).replace(/[^0-9]/g, "")}`}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      className="btn btn-xs btn-success rounded-pill px-2 py-0"
-                                      style={{ fontSize: "10px" }}
-                                    >
-                                      <i className="bi bi-whatsapp"></i>
-                                    </a>
+                                      <a
+                                        href={`https://wa.me/${String(founder.phoneNumber).replace(/[^0-9]/g, "")}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="btn btn-xs btn-success rounded-pill px-2 py-0"
+                                        style={{ fontSize: "10px" }}
+                                      >
+                                        <i className="bi bi-whatsapp"></i>
+                                      </a>
                                     )}
                                   </div>
                                 ) : (
@@ -728,10 +921,10 @@ export default function Dashboard() {
                                     className="btn btn-xs btn-outline-secondary rounded-pill px-2 py-0"
                                     style={{ fontSize: "11px" }}
                                   >
-                                    <i className="bi bi-telephone-plus me-1"></i> Request
+                                    <i className="bi bi-telephone-plus me-1"></i>{" "}
+                                    Request
                                   </button>
                                 )}
-
                               </td>
                               <td>
                                 <div className="d-flex gap-2">
@@ -741,7 +934,8 @@ export default function Dashboard() {
                                     className="btn btn-sm btn-primary rounded-pill px-3 py-1"
                                     style={{ fontSize: "11px" }}
                                   >
-                                    <i className="bi bi-chat-dots me-1"></i> Chat
+                                    <i className="bi bi-chat-dots me-1"></i>{" "}
+                                    Chat
                                   </button>
                                   <button
                                     type="button"
@@ -768,37 +962,95 @@ export default function Dashboard() {
               <div className="d-flex flex-column gap-3">
                 <div className="card foundmet-card border-0 shadow-sm p-4 bg-white">
                   <h5 className="fw-bold mb-1 text-main">Share an update</h5>
-                  <p className="small text-secondary mb-3">Post progress, ideas, or what you need next.</p>
+                  <p className="small text-secondary mb-3">
+                    Post progress, ideas, or what you need next.
+                  </p>
                   <form onSubmit={handleAddPost}>
-                    <textarea className="form-control mb-3" rows="4" maxLength="1000" value={newPostText} onChange={(e) => setNewPostText(e.target.value)} placeholder="What are you building?" required />
+                    <textarea
+                      className="form-control mb-3"
+                      rows="4"
+                      maxLength="1000"
+                      value={newPostText}
+                      onChange={(e) => setNewPostText(e.target.value)}
+                      placeholder="What are you building?"
+                      required
+                    />
                     <div className="d-flex justify-content-between align-items-center">
-                      <small className="text-secondary">{newPostText.length}/1000</small>
-                      <button type="submit" className="btn btn-foundmet rounded-pill px-4">
+                      <small className="text-secondary">
+                        {newPostText.length}/1000
+                      </small>
+                      <button
+                        type="submit"
+                        className="btn btn-foundmet rounded-pill px-4"
+                      >
                         <i className="bi bi-send me-1"></i> Publish
                       </button>
                     </div>
                   </form>
                 </div>
                 {posts.length === 0 ? (
-                  <div className="card foundmet-card border-0 shadow-sm p-4 bg-white text-center text-secondary">No posts yet.</div>
-                ) : posts.map((post) => (
-                  <article key={post._id} className="card foundmet-card border-0 shadow-sm p-4 bg-white">
-                    <div className="d-flex align-items-center gap-2 mb-2">
-                      <img src={post.author?.photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author?.name || "Founder")}`} alt="" className="rounded-circle" style={{ width: "36px", height: "36px", objectFit: "cover" }} />
-                      <div>
-                        <strong className="small d-block">{post.author?.name || "Founder"}</strong>
-                        <small className="text-secondary">{new Date(post.createdAt).toLocaleString()}</small>
+                  <div className="card foundmet-card border-0 shadow-sm p-4 bg-white text-center text-secondary">
+                    No posts yet.
+                  </div>
+                ) : (
+                  posts.map((post) => (
+                    <article
+                      key={post._id}
+                      className="card foundmet-card border-0 shadow-sm p-4 bg-white"
+                    >
+                      <div className="d-flex align-items-center gap-2 mb-2">
+                        <img
+                          src={
+                            post.author?.photo ||
+                            `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author?.name || "Founder")}`
+                          }
+                          alt=""
+                          className="rounded-circle"
+                          style={{
+                            width: "36px",
+                            height: "36px",
+                            objectFit: "cover",
+                          }}
+                        />
+                        <div>
+                          <strong className="small d-block">
+                            {post.author?.name || "Founder"}
+                          </strong>
+                          <small className="text-secondary">
+                            {new Date(post.createdAt).toLocaleString()}
+                          </small>
+                        </div>
                       </div>
-                    </div>
-                    <p className="mb-0 text-main" style={{ whiteSpace: "pre-wrap" }}>{post.text}</p>
-                    <div className="d-flex gap-2 mt-3">
-                      <button type="button" className={`btn btn-sm ${post.liked ? "btn-primary" : "btn-outline-primary"} rounded-pill`} onClick={() => handleLikePost(post)}>
-                        <i className="bi bi-heart me-1"></i>{post.likeCount || 0} Like{post.likeCount === 1 ? "" : "s"}
-                      </button>
-                      {String(post.author?._id) === String(currentUser?._id) && <button type="button" className="btn btn-sm btn-outline-danger rounded-pill" onClick={() => handleDeletePost(post._id)}>Delete</button>}
-                    </div>
-                  </article>
-                ))}
+                      <p
+                        className="mb-0 text-main"
+                        style={{ whiteSpace: "pre-wrap" }}
+                      >
+                        {post.text}
+                      </p>
+                      <div className="d-flex gap-2 mt-3">
+                        <button
+                          type="button"
+                          className={`btn btn-sm ${post.liked ? "btn-primary" : "btn-outline-primary"} rounded-pill`}
+                          onClick={() => handleLikePost(post)}
+                        >
+                          <i className="bi bi-heart me-1"></i>
+                          {post.likeCount || 0} Like
+                          {post.likeCount === 1 ? "" : "s"}
+                        </button>
+                        {String(post.author?._id) ===
+                          String(currentUser?._id) && (
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-danger rounded-pill"
+                            onClick={() => handleDeletePost(post._id)}
+                          >
+                            Delete
+                          </button>
+                        )}
+                      </div>
+                    </article>
+                  ))
+                )}
               </div>
             )}
 
@@ -807,12 +1059,18 @@ export default function Dashboard() {
               <div className="card foundmet-card border-0 shadow-sm p-4 bg-white">
                 <div className="d-flex justify-content-between align-items-center mb-3">
                   <div>
-                    <h5 className="fw-bold mb-1 text-main">Your Co-Founder Network</h5>
+                    <h5 className="fw-bold mb-1 text-main">
+                      Your Co-Founder Network
+                    </h5>
                     <p className="small text-secondary mb-0">
-                      Chat in real-time and request mobile numbers for direct phone calls.
+                      Chat in real-time and request mobile numbers for direct
+                      phone calls.
                     </p>
                   </div>
-                  <Link to="/explore" className="btn btn-foundmet btn-sm rounded-pill px-3">
+                  <Link
+                    to="/explore"
+                    className="btn btn-foundmet btn-sm rounded-pill px-3"
+                  >
                     + Find More Founders
                   </Link>
                 </div>
@@ -825,18 +1083,34 @@ export default function Dashboard() {
                         <div className="p-3 border rounded-3 bg-light h-100 d-flex flex-column justify-content-between">
                           <div className="d-flex align-items-center gap-3 mb-2">
                             <img
-                              src={founder.photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(founder.name || "Founder")}&background=0B5CFF&color=fff&size=80`}
+                              src={
+                                founder.photo ||
+                                `https://ui-avatars.com/api/?name=${encodeURIComponent(founder.name || "Founder")}&background=0B5CFF&color=fff&size=80`
+                              }
                               alt={founder.name}
                               className="rounded-circle border"
-                              style={{ width: "48px", height: "48px", objectFit: "cover" }}
+                              style={{
+                                width: "48px",
+                                height: "48px",
+                                objectFit: "cover",
+                              }}
                             />
                             <div>
-                              <strong className="text-main d-block">{founder.name}</strong>
-                              <span className="badge bg-primary text-white text-capitalize" style={{ fontSize: "10px" }}>
+                              <strong className="text-main d-block">
+                                {founder.name}
+                              </strong>
+                              <span
+                                className="badge bg-primary text-white text-capitalize"
+                                style={{ fontSize: "10px" }}
+                              >
                                 {founder.role}
                               </span>
-                              <small className="text-secondary d-block" style={{ fontSize: "11px" }}>
-                                <i className="bi bi-geo-alt me-1"></i> {founder.address}
+                              <small
+                                className="text-secondary d-block"
+                                style={{ fontSize: "11px" }}
+                              >
+                                <i className="bi bi-geo-alt me-1"></i>{" "}
+                                {founder.address}
                               </small>
                             </div>
                           </div>
@@ -849,7 +1123,9 @@ export default function Dashboard() {
                           <div className="p-2 bg-white rounded border mb-3 d-flex align-items-center justify-content-between">
                             <small className="text-secondary">
                               <i className="bi bi-telephone text-primary me-1"></i>
-                              {isShared ? founder.phoneNumber : "Mobile number is private"}
+                              {isShared
+                                ? founder.phoneNumber
+                                : "Mobile number is private"}
                             </small>
                             {isShared ? (
                               <div className="d-flex gap-1">
@@ -895,11 +1171,14 @@ export default function Dashboard() {
                               onClick={() => setRatingFounder(founder)}
                               className="btn btn-outline-warning text-dark btn-sm rounded-pill px-3"
                             >
-                              <i className="bi bi-star-fill text-warning me-1"></i> Endorse
+                              <i className="bi bi-star-fill text-warning me-1"></i>{" "}
+                              Endorse
                             </button>
                             <button
                               type="button"
-                              onClick={() => removeConnection(founder._id, founder.name)}
+                              onClick={() =>
+                                removeConnection(founder._id, founder.name)
+                              }
                               className="btn btn-outline-danger btn-sm rounded-pill px-2"
                               title="Remove"
                             >
@@ -921,26 +1200,74 @@ export default function Dashboard() {
                   <div>
                     <span className="admin-eyebrow">YOUR NETWORK</span>
                     <h5 className="fw-bold mb-1 text-main">Messages</h5>
-                    <p className="small text-secondary mb-0">Message accepted connections privately, just like LinkedIn.</p>
+                    <p className="small text-secondary mb-0">
+                      Message accepted connections privately and secure
+                 
+                    </p>
                   </div>
-                  <span className="badge rounded-pill bg-primary-subtle text-primary">{connectionProfiles.length} connections</span>
+                  <span className="badge rounded-pill bg-primary-subtle text-primary">
+                    {connectionProfiles.length} connections
+                  </span>
                 </div>
                 <div className="messages-search">
                   <i className="bi bi-search" />
-                  <input aria-label="Search connections to message" value={messageSearch} onChange={(event) => setMessageSearch(event.target.value)} placeholder="Search your connections" />
+                  <input
+                    aria-label="Search connections to message"
+                    value={messageSearch}
+                    onChange={(event) => setMessageSearch(event.target.value)}
+                    placeholder="Search your connections"
+                  />
                 </div>
                 {messageContacts.length > 0 ? (
                   <div className="messages-list">
                     {messageContacts.map((founder) => (
-                      <button type="button" className="message-contact" onClick={() => openChatWith(founder)} key={founder._id}>
-                        <img src={founder.photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(founder.name || "Founder")}&background=0B5CFF&color=fff&size=80`} alt="" />
-                        <span className="message-contact-copy"><strong>{founder.name}</strong><small>{founder.role || "Founder"} · {founder.projectDetails || "Start a professional conversation"}</small></span>
-                        <span className="message-contact-action"><i className="bi bi-chat-dots" /> Message</span>
+                      <button
+                        type="button"
+                        className="message-contact"
+                        onClick={() => openChatWith(founder)}
+                        key={founder._id}
+                      >
+                        <img
+                          src={
+                            founder.photo ||
+                            `https://ui-avatars.com/api/?name=${encodeURIComponent(founder.name || "Founder")}&background=0B5CFF&color=fff&size=80`
+                          }
+                          alt=""
+                        />
+                        <span className="message-contact-copy">
+                          <strong>{founder.name}</strong>
+                          <small>
+                            {founder.role || "Founder"} ·{" "}
+                            {founder.projectDetails ||
+                              "Start a professional conversation"}
+                          </small>
+                        </span>
+                        <span className="message-contact-action">
+                          <i className="bi bi-chat-dots" /> Message
+                        </span>
                       </button>
                     ))}
                   </div>
                 ) : (
-                  <div className="messages-empty"><i className="bi bi-chat-square-text" /><h6>{connectionProfiles.length ? "No matching connections" : "No accepted connections yet"}</h6><p>{connectionProfiles.length ? "Try another name or role." : "Connect with a founder first. Messaging unlocks after they accept your request."}</p><Link to="/explore" className="btn btn-foundmet btn-sm rounded-pill px-4">Find founders</Link></div>
+                  <div className="messages-empty">
+                    <i className="bi bi-chat-square-text" />
+                    <h6>
+                      {connectionProfiles.length
+                        ? "No matching connections"
+                        : "No accepted connections yet"}
+                    </h6>
+                    <p>
+                      {connectionProfiles.length
+                        ? "Try another name or role."
+                        : "Connect with a founder first. Messaging unlocks after they accept your request."}
+                    </p>
+                    <Link
+                      to="/explore"
+                      className="btn btn-foundmet btn-sm rounded-pill px-4"
+                    >
+                      Find founders
+                    </Link>
+                  </div>
                 )}
               </div>
             )}
@@ -948,9 +1275,12 @@ export default function Dashboard() {
             {/* TAB: MY PROJECT */}
             {activeTab === "projects" && (
               <div className="card foundmet-card border-0 shadow-sm p-4 bg-white">
-                <h5 className="fw-bold mb-1 text-main">Manage Your Startup Venture</h5>
+                <h5 className="fw-bold mb-1 text-main">
+                  Manage Your Startup Venture
+                </h5>
                 <p className="small text-secondary mb-4">
-                  Update your project description, stage, and demo links for co-founders to view.
+                  Update your project description, stage, and demo links for
+                  co-founders to view.
                 </p>
 
                 <form onSubmit={handleSaveProject}>
@@ -961,11 +1291,20 @@ export default function Dashboard() {
                     <select
                       className="form-select"
                       value={projectForm.status}
-                      onChange={(e) => setProjectForm({ ...projectForm, status: e.target.value })}
+                      onChange={(e) =>
+                        setProjectForm({
+                          ...projectForm,
+                          status: e.target.value,
+                        })
+                      }
                     >
                       <option value="idea">Idea Stage (Validating)</option>
-                      <option value="development">In Development (Building MVP)</option>
-                      <option value="execution">Execution / Live Product</option>
+                      <option value="development">
+                        In Development (Building MVP)
+                      </option>
+                      <option value="execution">
+                        Execution / Live Product
+                      </option>
                     </select>
                   </div>
 
@@ -977,7 +1316,12 @@ export default function Dashboard() {
                       className="form-control"
                       rows="4"
                       value={projectForm.details}
-                      onChange={(e) => setProjectForm({ ...projectForm, details: e.target.value })}
+                      onChange={(e) =>
+                        setProjectForm({
+                          ...projectForm,
+                          details: e.target.value,
+                        })
+                      }
                       placeholder="What problem does your startup solve and who are you looking for?"
                     ></textarea>
                   </div>
@@ -990,16 +1334,30 @@ export default function Dashboard() {
                       type="url"
                       className="form-control"
                       value={projectForm.link}
-                      onChange={(e) => setProjectForm({ ...projectForm, link: e.target.value })}
+                      onChange={(e) =>
+                        setProjectForm({ ...projectForm, link: e.target.value })
+                      }
                       placeholder="https://yourstartup.com or https://github.com/..."
                     />
                   </div>
 
                   <div className="d-flex flex-wrap gap-2">
-                    <button type="submit" className="btn btn-foundmet rounded-pill px-4 fw-semibold">
-                      <i className="bi bi-check2-circle me-1"></i> Save Startup Details
+                    <button
+                      type="submit"
+                      className="btn btn-foundmet rounded-pill px-4 fw-semibold"
+                    >
+                      <i className="bi bi-check2-circle me-1"></i> Save Startup
+                      Details
                     </button>
-                    {currentUser?.hasProject === "yes" && <button type="button" className="btn btn-outline-danger rounded-pill px-4" onClick={handleDeleteProject}>Delete Project</button>}
+                    {currentUser?.hasProject === "yes" && (
+                      <button
+                        type="button"
+                        className="btn btn-outline-danger rounded-pill px-4"
+                        onClick={handleDeleteProject}
+                      >
+                        Delete Project
+                      </button>
+                    )}
                   </div>
                 </form>
               </div>
@@ -1010,7 +1368,9 @@ export default function Dashboard() {
               <div className="card foundmet-card border-0 shadow-sm p-4 bg-white">
                 <div className="d-flex justify-content-between align-items-center mb-3">
                   <div>
-                    <h5 className="fw-bold mb-1 text-main">Startup Ideas Backlog</h5>
+                    <h5 className="fw-bold mb-1 text-main">
+                      Startup Ideas Backlog
+                    </h5>
                     <p className="small text-secondary mb-0">
                       Record, organize, and validate early startup concepts.
                     </p>
@@ -1018,7 +1378,10 @@ export default function Dashboard() {
                 </div>
 
                 {/* Add Idea Card */}
-                <form onSubmit={handleAddIdea} className="p-3 border rounded-3 bg-light mb-4">
+                <form
+                  onSubmit={handleAddIdea}
+                  className="p-3 border rounded-3 bg-light mb-4"
+                >
                   <h6 className="fw-bold small mb-2">+ Add New Concept</h6>
                   <div className="row g-2 mb-2">
                     <div className="col-md-8">
@@ -1053,7 +1416,10 @@ export default function Dashboard() {
                       onChange={(e) => setNewIdeaNotes(e.target.value)}
                     ></textarea>
                   </div>
-                  <button type="submit" className="btn btn-primary btn-sm rounded-pill px-3">
+                  <button
+                    type="submit"
+                    className="btn btn-primary btn-sm rounded-pill px-3"
+                  >
                     Save to Ideas
                   </button>
                 </form>
@@ -1061,17 +1427,29 @@ export default function Dashboard() {
                 {/* Ideas List */}
                 <div className="d-flex flex-column gap-2">
                   {ideas.map((idea) => (
-                    <div key={idea.id} className="p-3 border rounded-3 d-flex justify-content-between align-items-start">
+                    <div
+                      key={idea.id}
+                      className="p-3 border rounded-3 d-flex justify-content-between align-items-start"
+                    >
                       <div>
                         <div className="d-flex align-items-center gap-2 mb-1">
-                          <strong className="text-main small">{idea.title}</strong>
-                          <span className="badge bg-primary-subtle text-primary" style={{ fontSize: "10px" }}>
+                          <strong className="text-main small">
+                            {idea.title}
+                          </strong>
+                          <span
+                            className="badge bg-primary-subtle text-primary"
+                            style={{ fontSize: "10px" }}
+                          >
                             {idea.category}
                           </span>
                         </div>
-                        <p className="text-secondary small mb-0">{idea.notes || "No notes yet."}</p>
+                        <p className="text-secondary small mb-0">
+                          {idea.notes || "No notes yet."}
+                        </p>
                       </div>
-                      <span className="badge bg-light text-secondary border">{idea.status}</span>
+                      <span className="badge bg-light text-secondary border">
+                        {idea.status}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -1081,36 +1459,53 @@ export default function Dashboard() {
             {/* TAB: ALERTS / NOTIFICATIONS */}
             {activeTab === "notifications" && (
               <div className="card foundmet-card border-0 shadow-sm p-4 bg-white">
-                <h5 className="fw-bold mb-1 text-main">Founder Alerts & Notifications</h5>
+                <h5 className="fw-bold mb-1 text-main">
+                  Founder Alerts & Notifications
+                </h5>
                 <p className="small text-secondary mb-4">
-                  Stay updated on connection acceptances, ratings, and contact requests.
+                  Stay updated on connection acceptances, ratings, and contact
+                  requests.
                 </p>
 
                 <div className="d-flex flex-column gap-2">
                   {connectionNotifications.map((item) => (
-                    <div className="p-3 border rounded-3 bg-light d-flex align-items-center gap-3" key={item.id}>
-                      <div className={`rounded-circle bg-${item.tone}-subtle text-${item.tone} p-2`}>
+                    <div
+                      className="p-3 border rounded-3 bg-light d-flex align-items-center gap-3"
+                      key={item.id}
+                    >
+                      <div
+                        className={`rounded-circle bg-${item.tone}-subtle text-${item.tone} p-2`}
+                      >
                         <i className={`bi ${item.icon} fs-5`}></i>
                       </div>
                       <div>
-                        <strong className="small text-main d-block">{item.title}</strong>
+                        <strong className="small text-main d-block">
+                          {item.title}
+                        </strong>
                         <small className="text-secondary">{item.detail}</small>
                       </div>
                     </div>
                   ))}
                   {(currentUser.congratulations || []).map((item, index) => (
-                    <div className="p-3 border rounded-3 bg-success-subtle d-flex align-items-center gap-3" key={`${item.createdAt}-${index}`}>
+                    <div
+                      className="p-3 border rounded-3 bg-success-subtle d-flex align-items-center gap-3"
+                      key={`${item.createdAt}-${index}`}
+                    >
                       <div className="rounded-circle bg-success text-white p-2">
                         <i className="bi bi-trophy-fill fs-5"></i>
                       </div>
                       <div>
-                        <strong className="small text-main d-block">FoundMet congratulations!</strong>
+                        <strong className="small text-main d-block">
+                          FoundMet congratulations!
+                        </strong>
                         <small className="text-secondary">{item.message}</small>
                       </div>
                     </div>
                   ))}
                   {!currentUser.congratulations?.length && (
-                    <div className="text-center py-4 text-secondary small">No notifications yet.</div>
+                    <div className="text-center py-4 text-secondary small">
+                      No notifications yet.
+                    </div>
                   )}
                 </div>
               </div>
@@ -1119,101 +1514,244 @@ export default function Dashboard() {
             {/* TAB: SETTINGS */}
             {activeTab === "settings" && (
               <div className="card foundmet-card border-0 shadow-sm p-4 bg-white">
-                <h5 className="fw-bold mb-1 text-main">Profile & Privacy Settings</h5>
+                <h5 className="fw-bold mb-1 text-main">
+                  Profile & Privacy Settings
+                </h5>
                 <p className="small text-secondary mb-4">
-                  Manage your public profile details and mobile number visibility preferences.
+                  Manage your public profile details and mobile number
+                  visibility preferences.
                 </p>
 
                 <form onSubmit={handleSaveSettings}>
                   <div className="row g-3 mb-3">
                     <div className="col-md-6">
-                      <label className="form-label small fw-bold text-secondary">Full Name</label>
+                      <label className="form-label small fw-bold text-secondary">
+                        Full Name
+                      </label>
                       <input
                         type="text"
                         className="form-control"
                         value={settingsForm.name}
-                        onChange={(e) => setSettingsForm({ ...settingsForm, name: e.target.value })}
+                        onChange={(e) =>
+                          setSettingsForm({
+                            ...settingsForm,
+                            name: e.target.value,
+                          })
+                        }
                       />
                     </div>
                     <div className="row g-3 mb-3">
                       <div className="col-md-4">
-                        <label className="form-label small fw-bold text-secondary">I am looking for</label>
-                        <select className="form-select" value={settingsForm.matchRole} onChange={(e) => setSettingsForm({ ...settingsForm, matchRole: e.target.value })}>
-                          <option value="co-founder">Co-founder</option><option value="builder">Someone to build with</option>
+                        <label className="form-label small fw-bold text-secondary">
+                          I am looking for
+                        </label>
+                        <select
+                          className="form-select"
+                          value={settingsForm.matchRole}
+                          onChange={(e) =>
+                            setSettingsForm({
+                              ...settingsForm,
+                              matchRole: e.target.value,
+                            })
+                          }
+                        >
+                          <option value="co-founder">Co-founder</option>
+                          <option value="builder">Someone to build with</option>
                         </select>
                       </div>
                       <div className="col-md-4">
-                        <label className="form-label small fw-bold text-secondary">Build focus</label>
-                        <select className="form-select" value={settingsForm.buildType} onChange={(e) => setSettingsForm({ ...settingsForm, buildType: e.target.value })}>
-                          <option value="startup">Startup</option><option value="product">Product</option><option value="business">Business</option><option value="not-sure">Not sure yet</option>
+                        <label className="form-label small fw-bold text-secondary">
+                          Build focus
+                        </label>
+                        <select
+                          className="form-select"
+                          value={settingsForm.buildType}
+                          onChange={(e) =>
+                            setSettingsForm({
+                              ...settingsForm,
+                              buildType: e.target.value,
+                            })
+                          }
+                        >
+                          <option value="startup">Startup</option>
+                          <option value="product">Product</option>
+                          <option value="business">Business</option>
+                          <option value="not-sure">Not sure yet</option>
                         </select>
                       </div>
                       <div className="col-md-4">
-                        <label className="form-label small fw-bold text-secondary">Commitment</label>
-                        <select className="form-select" value={settingsForm.commitment} onChange={(e) => setSettingsForm({ ...settingsForm, commitment: e.target.value })}>
-                          <option value="full-time">Full-time</option><option value="part-time">Part-time</option><option value="exploring">Exploring</option>
+                        <label className="form-label small fw-bold text-secondary">
+                          Commitment
+                        </label>
+                        <select
+                          className="form-select"
+                          value={settingsForm.commitment}
+                          onChange={(e) =>
+                            setSettingsForm({
+                              ...settingsForm,
+                              commitment: e.target.value,
+                            })
+                          }
+                        >
+                          <option value="full-time">Full-time</option>
+                          <option value="part-time">Part-time</option>
+                          <option value="exploring">Exploring</option>
                         </select>
                       </div>
                     </div>
                     <div className="mb-3">
-                      <label className="form-label small fw-bold text-secondary">What can you bring?</label>
+                      <label className="form-label small fw-bold text-secondary">
+                        What can you bring?
+                      </label>
                       <div className="d-flex flex-wrap gap-2">
-                        {["technology", "business", "design", "marketing", "product", "other"].map((item) => (
-                          <button type="button" key={item} className={`btn btn-sm rounded-pill ${settingsForm.canBring.includes(item) ? "btn-primary" : "btn-outline-secondary"}`} onClick={() => setSettingsForm({ ...settingsForm, canBring: settingsForm.canBring.includes(item) ? settingsForm.canBring.filter((value) => value !== item) : [...settingsForm.canBring, item] })}>{item}</button>
+                        {[
+                          "technology",
+                          "business",
+                          "design",
+                          "marketing",
+                          "product",
+                          "other",
+                        ].map((item) => (
+                          <button
+                            type="button"
+                            key={item}
+                            className={`btn btn-sm rounded-pill ${settingsForm.canBring.includes(item) ? "btn-primary" : "btn-outline-secondary"}`}
+                            onClick={() =>
+                              setSettingsForm({
+                                ...settingsForm,
+                                canBring: settingsForm.canBring.includes(item)
+                                  ? settingsForm.canBring.filter(
+                                      (value) => value !== item,
+                                    )
+                                  : [...settingsForm.canBring, item],
+                              })
+                            }
+                          >
+                            {item}
+                          </button>
                         ))}
                       </div>
                     </div>
                     <div className="row g-3 mb-3">
-                      <div className="col-md-8"><label className="form-label small fw-bold text-secondary">Project details</label><textarea className="form-control" rows="2" value={settingsForm.projectDetails} onChange={(e) => setSettingsForm({ ...settingsForm, projectDetails: e.target.value })} /></div>
-                      <div className="col-md-4"><label className="form-label small fw-bold text-secondary">Project stage</label><select className="form-select" value={settingsForm.projectStatus} onChange={(e) => setSettingsForm({ ...settingsForm, projectStatus: e.target.value })}><option value="idea">Idea</option><option value="development">Development</option><option value="execution">Execution</option></select></div>
+                      <div className="col-md-8">
+                        <label className="form-label small fw-bold text-secondary">
+                          Project details
+                        </label>
+                        <textarea
+                          className="form-control"
+                          rows="2"
+                          value={settingsForm.projectDetails}
+                          onChange={(e) =>
+                            setSettingsForm({
+                              ...settingsForm,
+                              projectDetails: e.target.value,
+                            })
+                          }
+                        />
+                      </div>
+                      <div className="col-md-4">
+                        <label className="form-label small fw-bold text-secondary">
+                          Project stage
+                        </label>
+                        <select
+                          className="form-select"
+                          value={settingsForm.projectStatus}
+                          onChange={(e) =>
+                            setSettingsForm({
+                              ...settingsForm,
+                              projectStatus: e.target.value,
+                            })
+                          }
+                        >
+                          <option value="idea">Idea</option>
+                          <option value="development">Development</option>
+                          <option value="execution">Execution</option>
+                        </select>
+                      </div>
                     </div>
                     <div className="col-md-6">
-                      <label className="form-label small fw-bold text-secondary">Email Address</label>
+                      <label className="form-label small fw-bold text-secondary">
+                        Email Address
+                      </label>
                       <input
                         type="email"
                         className="form-control"
                         value={settingsForm.email}
                         disabled
                       />
-                      <small className="text-muted" style={{ fontSize: "11px" }}>Email cannot be changed.</small>
+                      <small
+                        className="text-muted"
+                        style={{ fontSize: "11px" }}
+                      >
+                        Email cannot be changed.
+                      </small>
                     </div>
                   </div>
 
                   <div className="row g-3 mb-3">
                     <div className="col-md-6">
-                      <label className="form-label small fw-bold text-secondary">Mobile Phone Number</label>
+                      <label className="form-label small fw-bold text-secondary">
+                        Mobile Phone Number
+                      </label>
                       <input
                         type="text"
                         className="form-control"
                         value={settingsForm.phone}
-                        onChange={(e) => setSettingsForm({ ...settingsForm, phone: e.target.value })}
+                        onChange={(e) =>
+                          setSettingsForm({
+                            ...settingsForm,
+                            phone: e.target.value,
+                          })
+                        }
                         placeholder="+91 98765 43210"
                       />
-                      <small className="text-muted" style={{ fontSize: "11px" }}>Private until shared with connected founders.</small>
+                      <small
+                        className="text-muted"
+                        style={{ fontSize: "11px" }}
+                      >
+                        Private until shared with connected founders.
+                      </small>
                     </div>
                     <div className="col-md-6">
-                      <label className="form-label small fw-bold text-secondary">City / Region (For 50-80 km search)</label>
+                      <label className="form-label small fw-bold text-secondary">
+                        City / Region (For 50-80 km search)
+                      </label>
                       <input
                         type="text"
                         className="form-control"
                         value={settingsForm.address}
-                        onChange={(e) => setSettingsForm({ ...settingsForm, address: e.target.value })}
+                        onChange={(e) =>
+                          setSettingsForm({
+                            ...settingsForm,
+                            address: e.target.value,
+                          })
+                        }
                         placeholder="e.g. Bangalore, India"
                       />
                     </div>
                   </div>
 
                   <div className="p-3 bg-light rounded-3 border mb-4">
-                    <h6 className="fw-bold small mb-2">Privacy & Visibility Preferences</h6>
+                    <h6 className="fw-bold small mb-2">
+                      Privacy & Visibility Preferences
+                    </h6>
                     <div className="form-check form-switch mb-2">
                       <input
                         className="form-check-input"
                         type="checkbox"
                         id="allowPhoneReq"
                         checked={settingsForm.allowPhoneRequest}
-                        onChange={(e) => setSettingsForm({ ...settingsForm, allowPhoneRequest: e.target.checked })}
+                        onChange={(e) =>
+                          setSettingsForm({
+                            ...settingsForm,
+                            allowPhoneRequest: e.target.checked,
+                          })
+                        }
                       />
-                      <label className="form-check-label small" htmlFor="allowPhoneReq">
+                      <label
+                        className="form-check-label small"
+                        htmlFor="allowPhoneReq"
+                      >
                         Allow accepted connections to request my mobile number
                       </label>
                     </div>
@@ -1223,21 +1761,32 @@ export default function Dashboard() {
                         type="checkbox"
                         id="discoverNearby"
                         checked={settingsForm.discoverableNearby}
-                        onChange={(e) => setSettingsForm({ ...settingsForm, discoverableNearby: e.target.checked })}
+                        onChange={(e) =>
+                          setSettingsForm({
+                            ...settingsForm,
+                            discoverableNearby: e.target.checked,
+                          })
+                        }
                       />
-                      <label className="form-check-label small" htmlFor="discoverNearby">
-                        Make my profile discoverable to founders within 50 to 80 km
+                      <label
+                        className="form-check-label small"
+                        htmlFor="discoverNearby"
+                      >
+                        Make my profile discoverable to founders within 50 to 80
+                        km
                       </label>
                     </div>
                   </div>
 
-                  <button type="submit" className="btn btn-foundmet rounded-pill px-4 fw-bold">
+                  <button
+                    type="submit"
+                    className="btn btn-foundmet rounded-pill px-4 fw-bold"
+                  >
                     Save Profile Changes
                   </button>
                 </form>
               </div>
             )}
-
           </div>
         </div>
       </div>
@@ -1258,7 +1807,9 @@ export default function Dashboard() {
         onClose={() => setRatingFounder(null)}
         targetFounder={ratingFounder}
         currentUser={currentUser}
-        onRatingSubmitted={() => showToast("Endorsement submitted successfully!")}
+        onRatingSubmitted={() =>
+          showToast("Endorsement submitted successfully!")
+        }
       />
     </div>
   );

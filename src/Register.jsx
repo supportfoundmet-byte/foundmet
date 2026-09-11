@@ -661,7 +661,7 @@ export default function Register() {
               {currentStep === "role" && (
                 <div className="fade-in">
                   <h2 className="display-6 fw-bold text-main mb-2">
-                    What is your founder role?
+                    What is your role?
                   </h2>
                   <p className="text-secondary mb-4">
                     Are you initiating your own venture, or ready to join as a
@@ -829,19 +829,19 @@ export default function Register() {
                     {[
                       {
                         key: "cto",
-                        title: "Tech Lead / Developer (CTO)",
+                        title: "Tech Lead / Developer/Full Stack Developer",
                         desc: "Builds the software, web app, mobile app, or AI",
                         icon: "bi-code-slash",
                       },
                       {
                         key: "ceo",
-                        title: "Business & Growth Lead (CEO)",
+                        title: "Business & Growth Lead",
                         desc: "Leads vision, marketing, sales, or partnerships",
                         icon: "bi-briefcase",
                       },
                       {
                         key: "cfo",
-                        title: "Finance & Operations Lead (CFO)",
+                        title: "Finance & Operations Lead",
                         desc: "Manages financial planning, legal, or scaling",
                         icon: "bi-graph-up-arrow",
                       },
@@ -1038,7 +1038,7 @@ export default function Register() {
                         Summary & Problem Solved
                       </small>
                       <small className="text-secondary">
-                        {formData.projectDetails.length}/2000
+                        {formData.projectDetails.length}/300
                       </small>
                     </div>
                     <textarea
@@ -1049,7 +1049,7 @@ export default function Register() {
                       onChange={handleChange}
                       placeholder="e.g. Building a peer-to-peer cloud GPU network for indie AI developers, reducing inference costs by 70%..."
                       className="form-control form-control-lg fs-5 p-3 border-2"
-                      maxLength={2000}
+                      maxLength={300}
                     ></textarea>
                   </div>
                 </div>
