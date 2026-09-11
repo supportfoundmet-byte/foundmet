@@ -1,8 +1,5 @@
 import { useState } from "react";
-import axios from "axios";
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "https://foundmet-backend.onrender.com";
+import api from "../services/api.js";
 
 const ENDORSEMENT_PRESETS = [
   "Strong Execution",
@@ -73,30 +70,20 @@ export default function RatingModal({
     setLoading(true);
 
     try {
-      const token = localStorage.getItem("foundmet_token");
-      let resData = null;
-
       try {
-        const response = await axios.post(
-          `${API_BASE_URL}/api/v1/ratings/${targetFounder._id}`,
+        await api.post(
+          `/api/v1/ratings/${targetFounder._id}`,
           {
             stars,
             feedback,
             tags: selectedTags,
           },
           {
-            headers: token ? { Authorization: `Bearer ${token}` } : {},
             timeout: 7000,
           }
         );
-        resData = response.data;
       } catch (err) {
         console.warn("Backend rating save failed, caching in local storage:", err.message);
-        // Fallback for offline or demo mode
-        resData = {
-          success: true,
-          message: `Endorsement recorded for ${targetFounder.name}!`,
-        };
       }
 
       // Update local storage cache for instant UI responsiveness

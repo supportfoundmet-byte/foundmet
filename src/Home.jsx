@@ -1,716 +1,433 @@
+import { Link } from "react-router-dom";
 import Header from "./components/Header.jsx";
+
+const SAMPLE_FOUNDERS = [
+  {
+    name: "Arjun Sharma",
+    role: "Founder",
+    location: "Kolkata (Within 25 km)",
+    tag: "AI & Fintech",
+    looking: "CTO / Lead Architect",
+    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+  },
+  {
+    name: "Priya Das",
+    role: "Co-Founder",
+    location: "Bangalore (Within 50 km)",
+    tag: "HealthTech & UI/UX",
+    looking: "CEO / Growth Lead",
+    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80",
+  },
+  {
+    name: "Rahul Mehta",
+    role: "Founder",
+    location: "Delhi NCR (Within 80 km)",
+    tag: "Cloud & DevTools",
+    looking: "CTO / Machine Learning",
+    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80",
+  },
+];
+
+const FOUNDING_TEAM = [
+  {
+    name: "Aman Mistu",
+    role: "Lead Creator & Full-Stack Architect",
+    bio: "Built the real-time matching engine, proximity radar, and secure communication architecture powering FoundMet.",
+    badge: "Core Engineering",
+    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+    skills: ["React & Node.js", "Socket.IO", "System Design"],
+  },
+  {
+    name: "Rohan Verma",
+    role: "Product & Founder Ecosystem",
+    bio: "Shaping intuitive workflows for non-technical founders, privacy boundaries, and verified founder credentials.",
+    badge: "Product Strategy",
+    avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=200&auto=format&fit=crop&q=80",
+    skills: ["Product Roadmap", "Founder Matching", "Growth"],
+  },
+  {
+    name: "Sneha Mukherjee",
+    role: "Lead UI/UX & Design Systems",
+    bio: "Designing distraction-free founder dashboards, high-contrast dark modes, and mobile-first discovery experiences.",
+    badge: "Design Systems",
+    avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&auto=format&fit=crop&q=80",
+    skills: ["UI/UX Systems", "Accessibility", "Design Ops"],
+  },
+];
 
 export default function Home() {
   return (
-    <>
+    <div className="home-page min-vh-100 bg-background d-flex flex-column">
       <Header />
 
       {/* ================= HERO ================= */}
-      <section className="home-hero">
+      <section className="py-5 my-auto landing-hero">
         <div className="container">
-          <div className="row align-items-center min-vh-75">
-
-            <div className="col-lg-7">
-
-              <span className="hero-badge">
-                <i className="bi bi-stars me-2"></i>
-                Build something meaningful
+          <div className="row align-items-center g-5">
+            {/* Left Copy */}
+            <div className="col-lg-7 animate-slide-up">
+              <span className="badge bg-primary-subtle text-primary rounded-pill px-3 py-2 fw-bold mb-3 d-inline-flex align-items-center gap-1">
+                <i className="bi bi-stars"></i> Co-Founder Matching Platform
               </span>
 
-              <h1 className="hero-title mt-4">
-                Find the right
-                <span className="foundmet-gradient-text">
-                  {" "}co-founder
-                </span>
+              <h1 className="display-4 fw-bold mb-3 text-main" style={{ letterSpacing: "-0.03em" }}>
+                Find Your <span className="foundmet-gradient-text">Co-Founder</span>.
                 <br />
-                to build your future.
+                Build Something Real.
               </h1>
 
-              <p className="hero-description">
-                FoundMet helps ambitious developers, designers, marketers,
-                and entrepreneurs discover people who share their vision
-                and want to build something real together.
+              <p className="lead text-secondary mb-4" style={{ maxWidth: "480px", fontSize: "1.05rem" }}>
+              Find the right person to build with.
               </p>
 
-              <div className="hero-buttons mt-4">
-
-                <a href="/explore" className="btn btn-foundmet btn-lg">
+              {/* Action Buttons */}
+              <div className="d-flex flex-wrap gap-3 mb-4">
+                <Link to="/explore" className="btn btn-foundmet btn-lg rounded-pill px-4 shadow-sm fw-bold">
                   <i className="bi bi-search me-2"></i>
-                  Find a Co-Founder
-                </a>
-
-                <a
-                  href="/register"
-                  className="btn btn-outline-dark btn-lg"
-                >
-                  Start Building
+                  Explore Builders
+                </Link>
+                <Link to="/register" className="btn btn-outline-primary btn-lg rounded-pill px-4 fw-semibold">
+                  Join Free
                   <i className="bi bi-arrow-right ms-2"></i>
-                </a>
-
+                </Link>
               </div>
 
-              <div className="hero-trust mt-4">
-                <div className="avatar-stack">
-                  <div className="mini-avatar avatar-1">A</div>
-                  <div className="mini-avatar avatar-2">R</div>
-                  <div className="mini-avatar avatar-3">P</div>
-                  <div className="mini-avatar avatar-4">S</div>
+              {/* Trust signals */}
+              <div className="d-flex align-items-center gap-3 pt-2">
+                <div className="d-flex align-items-center">
+                  {SAMPLE_FOUNDERS.map((f, i) => (
+                    <img
+                      key={f.name}
+                      src={f.avatar}
+                      alt={f.name}
+                      className="rounded-circle border border-2 border-white shadow-xs"
+                      style={{
+                        width: "36px",
+                        height: "36px",
+                        objectFit: "cover",
+                        marginLeft: i > 0 ? "-10px" : "0",
+                      }}
+                    />
+                  ))}
                 </div>
-
-                <div>
-                  <strong>Builders are joining FoundMet</strong>
-                  <small>
-                    Connect with people who want to build.
-                  </small>
-                </div>
+                <div className="small text-secondary"><strong className="text-main">1,200+ builders</strong> already exploring</div>
               </div>
-
             </div>
 
-            {/* Hero visual */}
-            <div className="col-lg-5 mt-5 mt-lg-0">
-
-              <div className="hero-visual">
-
-                <div className="floating-card floating-card-one">
-                  <div className="floating-icon">
-                    <i className="bi bi-code-slash"></i>
+            {/* Right Visual Card */}
+            <div className="col-lg-5 animate-slide-in">
+              <div className="card foundmet-card border-0 shadow-lg p-4 rounded-4 position-relative overflow-hidden animate-float hero-radar-card">
+                <div className="d-flex align-items-center justify-content-between mb-3 pb-3 border-bottom">
+                  <div className="d-flex align-items-center gap-2">
+                    <span className="badge bg-success rounded-circle p-1 animate-radar-pulse"></span>
+                    <span className="small fw-bold text-main">Live Match Radar</span>
                   </div>
-
-                  <div>
-                    <strong>Developer</strong>
-                    <small>Looking for co-founder</small>
-                  </div>
+                  <span className="badge bg-primary-subtle text-primary rounded-pill px-2 py-1 small">
+                    <i className="bi bi-geo-alt-fill me-1"></i> 50–80 km Radius
+                  </span>
                 </div>
 
-                <div className="hero-main-card">
+                <div className="d-flex flex-column gap-3">
+                  {SAMPLE_FOUNDERS.map((founder) => (
+                    <div
+                      key={founder.name}
+                      className="p-3 bg-light rounded-3 border d-flex align-items-center justify-content-between"
+                    >
+                      <div className="d-flex align-items-center gap-3">
+                        <img
+                          src={founder.avatar}
+                          alt={founder.name}
+                          className="rounded-circle border shadow-xs"
+                          style={{ width: "42px", height: "42px", objectFit: "cover" }}
+                        />
+                        <div>
+                          <div className="d-flex align-items-center gap-2">
+                            <strong className="small text-main">{founder.name}</strong>
+                            <span className="badge bg-primary text-white" style={{ fontSize: "9px" }}>
+                              {founder.role}
+                            </span>
+                          </div>
+                          <small className="text-secondary d-block" style={{ fontSize: "11px" }}>
+                            {founder.location}
+                          </small>
+                          <small className="text-primary fw-semibold" style={{ fontSize: "10px" }}>
+                            Needs {founder.looking}
+                          </small>
+                        </div>
+                      </div>
 
-                  <div className="connection-line"></div>
-
-                  <div className="profile-circle profile-blue">
-                    <i className="bi bi-person"></i>
-                  </div>
-
-                  <div className="connection-symbol">
-                    <i className="bi bi-link-45deg"></i>
-                  </div>
-
-                  <div className="profile-circle profile-purple">
-                    <i className="bi bi-person"></i>
-                  </div>
-
-                  <h4>Great things happen<br />when people connect.</h4>
-
-                  <p>
-                    Find someone who complements your skills,
-                    ideas and ambition.
-                  </p>
-
+                      <Link
+                        to="/explore"
+                        className="btn btn-sm btn-outline-primary rounded-pill px-3"
+                        style={{ fontSize: "11px" }}
+                      >
+                        Connect
+                      </Link>
+                    </div>
+                  ))}
                 </div>
-
-                <div className="floating-card floating-card-two">
-                  <div className="floating-icon purple-icon">
-                    <i className="bi bi-lightbulb"></i>
-                  </div>
-
-                  <div>
-                    <strong>New Startup Idea</strong>
-                    <small>Looking for a team</small>
-                  </div>
-                </div>
-
               </div>
-
             </div>
-
           </div>
         </div>
       </section>
 
-
-      {/* ================= STATS ================= */}
-      <section className="home-stats">
+      {/* ================= 3-STEP PIPELINE ================= */}
+      <section className="py-5 bg-white border-top border-bottom">
         <div className="container">
+          <div className="text-center mb-5">
+            <span className="badge bg-light text-secondary border px-3 py-1 rounded-pill mb-2 small fw-bold">
+              The FoundMet Flow
+            </span>
+            <h2 className="fw-bold text-main">Create Profile → Discover → Connect → Talk → Build</h2>
+          </div>
+
           <div className="row g-4 text-center">
-
-            <div className="col-6 col-lg-3">
-              <div className="stat-item">
-                <h2>1K+</h2>
-                <p>Builders</p>
+            <div className="col-6 col-lg">
+              <div className="p-4 rounded-4 bg-light border h-100 feature-step-card">
+                <div
+                  className="rounded-circle bg-primary-subtle text-primary d-inline-flex align-items-center justify-content-center p-3 mb-3"
+                  style={{ width: "56px", height: "56px" }}
+                >
+                  <i className="bi bi-person-badge fs-4"></i>
+                </div>
+                <h5 className="fw-bold text-main mb-2">1. Create Profile</h5>
+                <p className="small text-secondary mb-0">
+                  Your skills. Your goals. Your profile.
+                </p>
               </div>
             </div>
 
-            <div className="col-6 col-lg-3">
-              <div className="stat-item">
-                <h2>500+</h2>
-                <p>Connections</p>
+            <div className="col-6 col-lg">
+              <div className="p-4 rounded-4 bg-light border h-100 feature-step-card">
+                <div
+                  className="rounded-circle bg-primary-subtle text-primary d-inline-flex align-items-center justify-content-center p-3 mb-3"
+                  style={{ width: "56px", height: "56px" }}
+                >
+                  <i className="bi bi-geo-alt fs-4"></i>
+                </div>
+                <h5 className="fw-bold text-main mb-2">2. Discover & Proximity Filter</h5>
+                <p className="small text-secondary mb-0">
+                  Browse people who match your direction.
+                </p>
               </div>
             </div>
 
-            <div className="col-6 col-lg-3">
-              <div className="stat-item">
-                <h2>200+</h2>
-                <p>Startup Ideas</p>
+            <div className="col-6 col-lg">
+              <div className="p-4 rounded-4 bg-light border h-100 feature-step-card">
+                <div
+                  className="rounded-circle bg-primary-subtle text-primary d-inline-flex align-items-center justify-content-center p-3 mb-3"
+                  style={{ width: "56px", height: "56px" }}
+                >
+                  <i className="bi bi-chat-heart fs-4"></i>
+                </div>
+                <h5 className="fw-bold text-main mb-2">3. Connect & Chat Securely</h5>
+                <p className="small text-secondary mb-0">
+                  Send a request and start a private chat.
+                </p>
               </div>
             </div>
-
-            <div className="col-6 col-lg-3">
-              <div className="stat-item">
-                <h2>50+</h2>
-                <p>Projects</p>
-              </div>
-            </div>
-
+            <div className="col-6 col-lg"><div className="p-4 rounded-4 bg-light border h-100 feature-step-card"><i className="bi bi-chat-dots fs-4 text-primary"></i><h5 className="fw-bold text-main mb-2 mt-3">4. Talk</h5>            <p className="small text-secondary mb-0">Talk with people who say yes.</p></div></div>
+            <div className="col-6 col-lg"><div className="p-4 rounded-4 bg-light border h-100 feature-step-card"><i className="bi bi-rocket-takeoff fs-4 text-primary"></i><h5 className="fw-bold text-main mb-2 mt-3">5. Build</h5>            <p className="small text-secondary mb-0">Make the idea real.</p></div></div>
           </div>
         </div>
       </section>
 
-
-      {/* ================= HOW IT WORKS ================= */}
-      <section className="home-section">
+      {/* ================= FOUNDING MEMBER PERKS ================= */}
+      <section className="py-5 bg-light border-top border-bottom">
         <div className="container">
+          <div className="card border-0 rounded-4 p-4 p-md-5 text-white shadow-lg position-relative overflow-hidden animate-glow" style={{ background: "linear-gradient(135deg, #071A3D 0%, #0B5CFF 100%)" }}>
+            <div className="row align-items-center g-4">
+              <div className="col-lg-8">
+                <span className="badge bg-warning text-dark rounded-pill px-3 py-1 fw-bold mb-3 d-inline-flex align-items-center gap-1">
+                  <i className="bi bi-patch-check-fill"></i> Early Cohort Access
+                </span>
+                <h2 className="fw-bold mb-2">Join as a Founding Member</h2>
+                <p className="opacity-90 mb-4" style={{ maxWidth: "560px" }}>
+                  Join the first 1,000 verified builders on FoundMet. Receive an exclusive Founding Member badge, priority discovery in local 50–80 km radar, and direct messaging access.
+                </p>
 
-          <div className="section-heading text-center">
-            <span className="section-label">HOW IT WORKS</span>
+                <div className="row g-3">
+                  <div className="col-sm-6">
+                    <div className="d-flex align-items-center gap-2">
+                      <i className="bi bi-award-fill text-warning fs-5"></i>
+                      <span className="small fw-semibold">Founding Member Badge</span>
+                    </div>
+                  </div>
+                  <div className="col-sm-6">
+                    <div className="d-flex align-items-center gap-2">
+                      <i className="bi bi-geo-alt-fill text-info fs-5"></i>
+                      <span className="small fw-semibold">Priority 50–80 km Radar</span>
+                    </div>
+                  </div>
+                  <div className="col-sm-6">
+                    <div className="d-flex align-items-center gap-2">
+                      <i className="bi bi-chat-dots-fill text-success fs-5"></i>
+                      <span className="small fw-semibold">Real-Time Chat & Contact Sharing</span>
+                    </div>
+                  </div>
+                  <div className="col-sm-6">
+                    <div className="d-flex align-items-center gap-2">
+                      <i className="bi bi-shield-check-fill text-primary fs-5"></i>
+                      <span className="small fw-semibold">100% Free & Zero Equity</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-            <h2>
-              From an idea to a
-              <span className="foundmet-gradient-text">
-                {" "}real team.
-              </span>
-            </h2>
+              <div className="col-lg-4 text-lg-end">
+                <Link to="/register" className="btn btn-warning btn-lg rounded-pill px-4 fw-bold text-dark shadow">
+                  Claim Founding Profile
+                  <i className="bi bi-arrow-right ms-2"></i>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
-            <p>
-              FoundMet makes it easier to find the right people
-              and start building together.
+      {/* ================= MEET THE CREATORS & FOUNDING TEAM ================= */}
+      <section className="py-5 bg-white border-bottom">
+        <div className="container">
+          <div className="text-center mb-5">
+            <span className="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 rounded-pill mb-2 small fw-bold">
+              Behind FoundMet
+            </span>
+            <h2 className="fw-bold text-main">Meet the Founding Team</h2>
+            <p className="text-secondary small mx-auto" style={{ maxWidth: "480px" }}>
+              The creators and builders dedicated to making co-founder discovery effortless, transparent, and secure.
             </p>
           </div>
-
-          <div className="row g-4 mt-4">
-
-            <div className="col-md-4">
-              <div className="feature-card">
-
-                <div className="feature-number">01</div>
-
-                <div className="feature-icon">
-                  <i className="bi bi-person-plus"></i>
-                </div>
-
-                <h3>Create your profile</h3>
-
-                <p>
-                  Tell the community about your skills, experience,
-                  interests and what you're looking to build.
-                </p>
-
-              </div>
-            </div>
-
-            <div className="col-md-4">
-              <div className="feature-card">
-
-                <div className="feature-number">02</div>
-
-                <div className="feature-icon">
-                  <i className="bi bi-search"></i>
-                </div>
-
-                <h3>Discover builders</h3>
-
-                <p>
-                  Explore founders and creators based on their
-                  skills, ideas, interests and goals.
-                </p>
-
-              </div>
-            </div>
-
-            <div className="col-md-4">
-              <div className="feature-card">
-
-                <div className="feature-number">03</div>
-
-                <div className="feature-icon">
-                  <i className="bi bi-chat-heart"></i>
-                </div>
-
-                <h3>Connect & build</h3>
-
-                <p>
-                  Connect with people who share your vision
-                  and start turning your ideas into reality.
-                </p>
-
-              </div>
-            </div>
-
-          </div>
-
-        </div>
-      </section>
-
-
-      {/* ================= FEATURED FOUNDERS ================= */}
-      <section className="home-section founders-section">
-        <div className="container">
-
-          <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-5">
-
-            <div className="section-heading mb-0">
-              <span className="section-label">DISCOVER BUILDERS</span>
-
-              <h2>
-                Meet ambitious
-                <span className="foundmet-gradient-text">
-                  {" "}founders.
-                </span>
-              </h2>
-
-              <p>
-                Find people with the skills and mindset you need.
-              </p>
-            </div>
-
-            <a
-              href="/explore"
-              className="view-all-link mt-3 mt-md-0"
-            >
-              Explore all
-              <i className="bi bi-arrow-right ms-2"></i>
-            </a>
-
-          </div>
-
 
           <div className="row g-4">
+            {FOUNDING_TEAM.map((member) => (
+              <div key={member.name} className="col-md-4">
+                <div className="card foundmet-card h-100 border p-4 rounded-4 shadow-sm team-card d-flex flex-column justify-content-between">
+                  <div>
+                    <div className="d-flex align-items-center gap-3 mb-3">
+                      <img
+                        src={member.avatar}
+                        alt={member.name}
+                        className="rounded-circle border border-2 border-primary shadow-xs"
+                        style={{ width: "60px", height: "60px", objectFit: "cover" }}
+                      />
+                      <div>
+                        <h6 className="fw-bold text-main mb-0">{member.name}</h6>
+                        <small className="text-primary fw-semibold d-block" style={{ fontSize: "12px" }}>
+                          {member.role}
+                        </small>
+                        <span className="badge bg-light text-secondary border mt-1" style={{ fontSize: "10px" }}>
+                          {member.badge}
+                        </span>
+                      </div>
+                    </div>
 
-            <Founder
-              letter="A"
-              name="Arjun Sharma"
-              role="Full Stack Developer"
-              location="Kolkata, India"
-              skills={["React", "Node.js", "MongoDB"]}
-              looking="Business Co-Founder"
-            />
+                    <p className="text-secondary small mb-3" style={{ lineHeight: "1.5" }}>
+                      {member.bio}
+                    </p>
+                  </div>
 
-            <Founder
-              letter="P"
-              name="Priya Das"
-              role="Product Designer"
-              location="Bangalore, India"
-              skills={["UI/UX", "Figma", "Product"]}
-              looking="Technical Co-Founder"
-            />
+                  <div>
+                    <div className="d-flex flex-wrap gap-1 mb-3">
+                      {member.skills.map((s) => (
+                        <span
+                          key={s}
+                          className="badge bg-light text-main border rounded-pill"
+                          style={{ fontSize: "10px", padding: "4px 8px" }}
+                        >
+                          {s}
+                        </span>
+                      ))}
+                    </div>
 
-            <Founder
-              letter="R"
-              name="Rahul Mehta"
-              role="AI / ML Engineer"
-              location="Delhi, India"
-              skills={["Python", "AI", "Machine Learning"]}
-              looking="Growth Co-Founder"
-            />
-
+                    <div className="d-flex align-items-center gap-2 pt-2 border-top">
+                      <Link
+                        to="/explore"
+                        className="btn btn-sm btn-outline-primary rounded-pill w-100 fw-semibold"
+                        style={{ fontSize: "12px" }}
+                      >
+                        <i className="bi bi-chat-text me-1"></i> Connect on FoundMet
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
-
         </div>
       </section>
 
-
-      {/* ================= IDEAS ================= */}
-      <section className="home-section">
+      {/* ================= PRIVACY & TRUST ================= */}
+      <section className="py-5">
         <div className="container">
-
-          <div className="section-heading text-center">
-            <span className="section-label">STARTUP IDEAS</span>
-
-            <h2>
-              Ideas deserve the
-              <span className="foundmet-gradient-text">
-                {" "}right team.
+          <div className="row align-items-center g-4">
+            <div className="col-md-6">
+              <span className="badge bg-primary-subtle text-primary rounded-pill px-3 py-1 fw-bold mb-2">
+                Founder Privacy First
               </span>
-            </h2>
+              <h3 className="fw-bold text-main mb-3">Your Contacts & Ideas Are Protected</h3>
+              <ul className="list-unstyled text-secondary small d-flex flex-column gap-3 mb-0">
+                <li className="d-flex align-items-start gap-2">
+                  <i className="bi bi-shield-check text-success fs-5"></i>
+                  <div>
+                    <strong className="text-main d-block">Private Mobile Numbers</strong>
+                    Phone numbers are never publicly visible. They can only be requested and shared between accepted connections.
+                  </div>
+                </li>
+                <li className="d-flex align-items-start gap-2">
+                  <i className="bi bi-check-circle text-primary fs-5"></i>
+                  <div>
+                    <strong className="text-main d-block">Zero Equity & 100% IP Ownership</strong>
+                    You retain total ownership of your venture. FoundMet charges zero fees and claims zero equity.
+                  </div>
+                </li>
+                <li className="d-flex align-items-start gap-2">
+                  <i className="bi bi-lock text-info fs-5"></i>
+                  <div>
+                    <strong className="text-main d-block">Authentic Verified Network</strong>
+                    Only logged in, verified founders can send connection requests.
+                  </div>
+                </li>
+              </ul>
+            </div>
 
-            <p>
-              Discover ideas that need people like you.
-            </p>
-          </div>
-
-
-          <div className="row g-4 mt-4">
-
-            <Idea
-              icon="bi-shop"
-              category="SaaS"
-              title="Smart Business Management"
-              description="A simple platform helping small businesses manage their everyday operations."
-              looking="Developer + Marketing"
-            />
-
-            <Idea
-              icon="bi-mortarboard"
-              category="EdTech"
-              title="Student Mentor Network"
-              description="Connect students with experienced mentors and professionals."
-              looking="Technical Co-Founder"
-            />
-
-            <Idea
-              icon="bi-robot"
-              category="AI"
-              title="AI Tools for Small Teams"
-              description="Practical AI tools designed for startups and small businesses."
-              looking="Product + Growth"
-            />
-
-          </div>
-
-        </div>
-      </section>
-
-
-      {/* ================= STORIES ================= */}
-      <section className="home-section stories-section">
-        <div className="container">
-
-          <div className="section-heading">
-            <span className="section-label">FOUNDER STORIES</span>
-
-            <h2>
-              Building isn't
-              <span className="foundmet-gradient-text">
-                {" "}easy.
-              </span>
-            </h2>
-
-            <p>
-              Share your journey, struggles and lessons with
-              people building alongside you.
-            </p>
-          </div>
-
-
-          <div className="row g-4 mt-3">
-
-            <div className="col-lg-7">
-              <div className="story-feature-card">
-
-                <span className="story-tag">
-                  Founder Journey
-                </span>
-
-                <h3>
-                  Why finding the right co-founder
-                  can change everything.
-                </h3>
-
-                <p>
-                  Building a startup isn't only about having a great
-                  idea. It's about finding people who believe in the
-                  same mission and are willing to build through the
-                  difficult parts.
+            <div className="col-md-6 text-center">
+              <div className="p-4 p-md-5 rounded-4 text-white shadow-lg" style={{ background: "linear-gradient(135deg, #0B5CFF 0%, #7038F5 100%)" }}>
+                <h3 className="fw-bold mb-2">Ready to Build Your Startup?</h3>
+                <p className="opacity-90 small mb-4">
+                  Join hundreds of founders matching, collaborating, and launching ventures today.
                 </p>
-
-                <a href="/explore">
-                  Read more
-                  <i className="bi bi-arrow-right ms-2"></i>
-                </a>
-
+                <div className="d-flex justify-content-center gap-2">
+                  <Link to="/register" className="btn btn-light rounded-pill px-4 fw-bold text-primary">
+                    Create Profile
+                  </Link>
+                  <Link to="/explore" className="btn btn-outline-light rounded-pill px-4">
+                    Browse Feed
+                  </Link>
+                </div>
               </div>
             </div>
-
-
-            <div className="col-lg-5">
-
-              <div className="story-small-card">
-                <div className="story-icon">
-                  <i className="bi bi-rocket-takeoff"></i>
-                </div>
-
-                <div>
-                  <h4>Start before you're ready</h4>
-                  <p>
-                    Your first step doesn't need to be perfect.
-                  </p>
-                </div>
-              </div>
-
-              <div className="story-small-card mt-3">
-                <div className="story-icon purple">
-                  <i className="bi bi-people"></i>
-                </div>
-
-                <div>
-                  <h4>Build with people</h4>
-                  <p>
-                    The right team can turn an idea into something real.
-                  </p>
-                </div>
-              </div>
-
-            </div>
-
           </div>
-
         </div>
       </section>
-
-
-      {/* ================= CTA ================= */}
-      <section className="home-cta">
-        <div className="container">
-
-          <div className="cta-box">
-
-            <div className="cta-content">
-
-              <span>
-                <i className="bi bi-stars me-2"></i>
-                Your next chapter starts here
-              </span>
-
-              <h2>
-                Don't build your dream
-                <br className="d-none d-md-block" />
-                <span>alone.</span>
-              </h2>
-
-              <p>
-                Meet people. Share ideas. Find your co-founder.
-                Start building something that matters.
-              </p>
-
-              <a
-                href="/register"
-                className="btn btn-light btn-lg"
-              >
-                Join FoundMet
-                <i className="bi bi-arrow-right ms-2"></i>
-              </a>
-
-            </div>
-
-          </div>
-
-        </div>
-      </section>
-
 
       {/* ================= FOOTER ================= */}
-      <footer className="foundmet-footer">
-
-        <div className="container">
-
-          <div className="row g-5">
-
-            <div className="col-lg-4">
-
-              <a href="/" className="footer-brand">
-                <span className="footer-logo">
-                  F
-                </span>
-
-                <span>FoundMet</span>
-              </a>
-
-              <p className="footer-description">
-                A community for ambitious people to find
-                co-founders, discover ideas and build meaningful
-                products together.
-              </p>
-
-              <div className="footer-socials">
-
-                <a href="#" aria-label="LinkedIn">
-                  <i className="bi bi-linkedin"></i>
-                </a>
-
-                <a href="#" aria-label="GitHub">
-                  <i className="bi bi-github"></i>
-                </a>
-
-                <a href="#" aria-label="Twitter">
-                  <i className="bi bi-twitter-x"></i>
-                </a>
-
-                <a href="#" aria-label="Instagram">
-                  <i className="bi bi-instagram"></i>
-                </a>
-
-              </div>
-
-            </div>
-
-
-            <div className="col-6 col-lg-2">
-
-              <h5>Platform</h5>
-
-              <a href="/explore">Explore</a>
-              <a href="/ideas">Ideas</a>
-              <a href="/projects">Projects</a>
-              <a href="/register">Join</a>
-
-            </div>
-
-
-            <div className="col-6 col-lg-2">
-
-              <h5>Company</h5>
-
-              <a href="/about">About</a>
-              <a href="/contact">Contact</a>
-              <a href="#">Community</a>
-              <a href="#">Blog</a>
-
-            </div>
-
-
-            <div className="col-6 col-lg-2">
-
-              <h5>Resources</h5>
-
-              <a href="#">Help Center</a>
-              <a href="#">Guidelines</a>
-              <a href="#">Privacy</a>
-              <a href="#">Terms</a>
-
-            </div>
-
-
-            <div className="col-6 col-lg-2">
-
-              <h5>Get Started</h5>
-
-              <a href="/login">Login</a>
-              <a href="/register">Create Profile</a>
-              <a href="/explore">Find a Co-Founder</a>
-
-            </div>
-
+      <footer className="mt-auto py-4 bg-white border-top">
+        <div className="container d-flex flex-column flex-md-row align-items-center justify-content-between gap-3 text-secondary small">
+          <div className="d-flex align-items-center gap-2">
+            <span className="fw-bold text-main">FoundMet</span>
+            <span>•</span>
+            <span>Built for people who build.</span>
           </div>
 
-
-          <div className="footer-bottom">
-
-            <span>
-              © {new Date().getFullYear()} FoundMet. All rights reserved.
-            </span>
-
-            <span>
-              Built for people who build.
-            </span>
-
+          <div className="d-flex align-items-center gap-3">
+            <Link to="/explore" className="text-secondary text-decoration-none">Explore Feed</Link>
+            <Link to="/terms" className="text-secondary text-decoration-none">Terms</Link>
+            <Link to="/privacy" className="text-secondary text-decoration-none">Privacy</Link>
+            <Link to="/cookies" className="text-secondary text-decoration-none">Cookies</Link>
           </div>
-
         </div>
-
       </footer>
-    </>
-  );
-}
-
-
-/* ================= FOUNDER COMPONENT ================= */
-
-function Founder({
-  letter,
-  name,
-  role,
-  location,
-  skills,
-  looking,
-}) {
-  return (
-    <div className="col-md-6 col-lg-4">
-
-      <div className="home-founder-card">
-
-        <div className="d-flex align-items-center gap-3">
-
-          <div className="founder-profile-avatar">
-            {letter}
-          </div>
-
-          <div>
-            <h4>{name}</h4>
-            <p>{role}</p>
-          </div>
-
-        </div>
-
-        <div className="founder-location">
-          <i className="bi bi-geo-alt me-1"></i>
-          {location}
-        </div>
-
-        <div className="founder-skills">
-
-          {skills.map((skill) => (
-            <span key={skill}>
-              {skill}
-            </span>
-          ))}
-
-        </div>
-
-        <div className="founder-looking">
-          <small>Looking for</small>
-          <strong>{looking}</strong>
-        </div>
-
-        <a
-          href="/explore"
-          className="btn btn-outline-primary w-100 mt-3"
-        >
-          View Profile
-        </a>
-
-      </div>
-
-    </div>
-  );
-}
-
-
-/* ================= IDEA COMPONENT ================= */
-
-function Idea({
-  icon,
-  category,
-  title,
-  description,
-  looking,
-}) {
-  return (
-    <div className="col-md-6 col-lg-4">
-
-      <div className="idea-card">
-
-        <div className="idea-icon">
-          <i className={`bi ${icon}`}></i>
-        </div>
-
-        <span className="idea-category">
-          {category}
-        </span>
-
-        <h3>{title}</h3>
-
-        <p>{description}</p>
-
-        <div className="idea-footer">
-          <span>
-            <i className="bi bi-people me-1"></i>
-            {looking}
-          </span>
-
-          <i className="bi bi-arrow-up-right"></i>
-        </div>
-
-      </div>
-
     </div>
   );
 }

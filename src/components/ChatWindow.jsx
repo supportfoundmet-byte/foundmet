@@ -1,5 +1,11 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useRef, useState } from "react";
-import { getSocket } from "../services/socket.js";
+import api from "../services/api.js";
+import { getSocket, registerPresence } from "../services/socket.js";
+import { notifyBrowser } from "../services/notifications.js";
+
+const avatarFor = (name, photo) =>
+  photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(name || "F")}&background=0B5CFF&color=fff&size=80`;
 
 export default function ChatWindow({
   isOpen,
@@ -15,11 +21,27 @@ export default function ChatWindow({
   const [isMinimized, setIsMinimized] = useState(false);
   const [isContactTyping, setIsContactTyping] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [onlineUsers, setOnlineUsers] = useState([]);
+  const [sendError, setSendError] = useState("");
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [sharedPhones, setSharedPhones] = useState(() => {
+    try {
+      const stored = localStorage.getItem("foundmet_shared_phones");
+      return stored ? JSON.parse(stored) : {};
+    } catch {
+      return {};
+    }
+  });
 
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
-  // Sync initialContact if it changes from parent prop
+  useEffect(() => {
+    if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission().catch(() => {});
+    }
+  }, []);
+
   useEffect(() => {
     if (initialContact) {
       setActiveContact(initialContact);
@@ -27,131 +49,131 @@ export default function ChatWindow({
     }
   }, [initialContact]);
 
-  // Determine room ID between current user and active contact
   const roomId =
     currentUser && activeContact
       ? [String(currentUser._id), String(activeContact._id)].sort().join("_")
       : null;
 
-  // Load chat history from localStorage on room switch
   useEffect(() => {
-    if (!roomId) {
+    if (!currentUser?._id) return undefined;
+    const socket = registerPresence(currentUser._id);
+    const handleOnlineUsers = (userIds) => {
+      if (Array.isArray(userIds)) setOnlineUsers(userIds.map(String));
+    };
+    socket.on("online_users", handleOnlineUsers);
+    return () => socket.off("online_users", handleOnlineUsers);
+  }, [currentUser?._id]);
+
+  useEffect(() => {
+    if (!currentUser?._id || !activeContact?._id || !roomId) {
       setMessages([]);
-      return;
+      return undefined;
     }
 
-    try {
-      const historyKey = `foundmet_chat_${roomId}`;
-      const stored = localStorage.getItem(historyKey);
-      if (stored) {
-        setMessages(JSON.parse(stored));
-      } else {
-        // Welcome system message
-        const starter = [
-          {
-            id: `init_${Date.now()}`,
-            roomId,
-            isSystem: true,
-            text: `Connection established. You can now securely message ${activeContact.name}.`,
-            timestamp: new Date().toISOString(),
-          },
-        ];
-        setMessages(starter);
-        localStorage.setItem(historyKey, JSON.stringify(starter));
-      }
-    } catch {
-      setMessages([]);
-    }
-  }, [roomId, activeContact]);
+    let cancelled = false;
+    setLoadingHistory(true);
+    api.get(`/api/v1/messages/${activeContact._id}`)
+      .then(({ data }) => {
+        if (cancelled) return;
+        const history = Array.isArray(data.messages) ? data.messages : [];
+        setMessages(history.length ? history : [{
+          id: `init_${roomId}`,
+          roomId,
+          isSystem: true,
+          text: `You and ${activeContact.name} are connected. Messages stay private to this conversation.`,
+          timestamp: new Date().toISOString(),
+        }]);
+        setSendError("");
+      })
+      .catch((error) => {
+        if (!cancelled) setSendError(error.response?.data?.message || "Could not load chat history.");
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingHistory(false);
+      });
 
-  // Connect to Socket.IO and listen for messages
+    return () => {
+      cancelled = true;
+    };
+  }, [currentUser?._id, activeContact?._id, activeContact?.name, roomId]);
+
   useEffect(() => {
-    if (!currentUser || !roomId) return;
-
+    if (!currentUser?._id) return undefined;
     const socket = getSocket();
+    const joinRoom = () => {
+      if (roomId) socket.emit("join_room", { roomId });
+    };
+    if (socket.connected) joinRoom();
+    socket.on("connect", joinRoom);
 
-    if (!socket.connected) {
-      socket.connect();
-    }
-
-    // Join the private direct room
-    socket.emit("join_room", { roomId, user: currentUser });
-
-    // Handle incoming message
-    const handleReceiveMessage = (incomingMsg) => {
-      if (incomingMsg.roomId === roomId) {
-        setMessages((prev) => {
-          if (prev.some((m) => m.id === incomingMsg.id)) return prev;
-          const updated = [...prev, incomingMsg];
-          try {
-            localStorage.setItem(`foundmet_chat_${roomId}`, JSON.stringify(updated));
-          } catch {
-            // Ignore storage limits
-          }
-          return updated;
-        });
-
-        if (isMinimized) {
-          setUnreadCount((c) => c + 1);
+    const upsertMessage = (incomingMsg) => {
+      setMessages((prev) => {
+        if (prev.some((item) => item.id === incomingMsg.id || (incomingMsg.clientId && item.id === incomingMsg.clientId))) {
+          return prev.map((item) => (item.id === incomingMsg.clientId ? incomingMsg : item));
         }
+        return [...prev, incomingMsg];
+      });
+    };
+
+    const handleReceiveMessage = (incomingMsg) => {
+      if (!incomingMsg?.roomId) return;
+      const isCurrentThread = incomingMsg.roomId === roomId;
+      if (isCurrentThread) {
+        upsertMessage(incomingMsg);
+        if (isMinimized) setUnreadCount((count) => count + 1);
+      }
+      if (String(incomingMsg.senderId) !== String(currentUser._id)) {
+        notifyBrowser(incomingMsg.senderName || "New FoundMet message", incomingMsg.text || "You received a new message.");
       }
     };
 
-    // Handle contact typing
     const handleUserTyping = ({ userId, isTyping }) => {
-      if (activeContact && String(userId) === String(activeContact._id)) {
-        setIsContactTyping(isTyping);
-      }
+      if (activeContact && String(userId) === String(activeContact._id)) setIsContactTyping(Boolean(isTyping));
     };
+
+    const handleMessageError = ({ message }) => setSendError(message || "Message could not be sent.");
 
     socket.on("receive_message", handleReceiveMessage);
     socket.on("user_typing", handleUserTyping);
+    socket.on("message_error", handleMessageError);
 
     return () => {
+      socket.off("connect", joinRoom);
       socket.off("receive_message", handleReceiveMessage);
       socket.off("user_typing", handleUserTyping);
+      socket.off("message_error", handleMessageError);
     };
   }, [currentUser, roomId, activeContact, isMinimized]);
 
-  // Auto-scroll to bottom of chat
   useEffect(() => {
-    if (!isMinimized) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }
+    if (!isMinimized) messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isContactTyping, isMinimized]);
 
-  // Handle typing debounce
-  const handleInputChange = (e) => {
-    setInputText(e.target.value);
-
-    if (roomId && currentUser) {
-      const socket = getSocket();
-      socket.emit("typing", {
-        roomId,
-        userId: currentUser._id,
-        userName: currentUser.name,
-        isTyping: true,
-      });
-
-      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-      typingTimeoutRef.current = setTimeout(() => {
-        socket.emit("typing", {
-          roomId,
-          userId: currentUser._id,
-          userName: currentUser.name,
-          isTyping: false,
-        });
-      }, 1500);
-    }
+  const handleInputChange = (event) => {
+    setInputText(event.target.value);
+    if (!roomId || !currentUser) return;
+    const socket = getSocket();
+    socket.emit("typing", { roomId, userId: currentUser._id, userName: currentUser.name, isTyping: true });
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = setTimeout(() => {
+      socket.emit("typing", { roomId, userId: currentUser._id, userName: currentUser.name, isTyping: false });
+    }, 1500);
   };
 
-  // Send message
   const handleSendMessage = (textToSend = null) => {
     const text = (typeof textToSend === "string" ? textToSend : inputText).trim();
     if (!text || !roomId || !currentUser || !activeContact) return;
+    const socket = getSocket();
+    if (!socket.connected) {
+      setSendError("Chat is reconnecting. Please try again in a moment.");
+      registerPresence(currentUser._id);
+      return;
+    }
 
-    const newMessage = {
-      id: `msg_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+    const clientId = `msg_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const pending = {
+      id: clientId,
+      clientId,
       roomId,
       senderId: currentUser._id,
       senderName: currentUser.name,
@@ -159,89 +181,46 @@ export default function ChatWindow({
       receiverId: activeContact._id,
       text,
       timestamp: new Date().toISOString(),
+      pending: true,
     };
-
-    // 1. Emit to Socket.IO server
-    const socket = getSocket();
-    if (socket.connected) {
-      socket.emit("send_message", newMessage);
-    }
-
-    // 2. Optimistic local update
-    setMessages((prev) => {
-      if (prev.some((m) => m.id === newMessage.id)) return prev;
-      const updated = [...prev, newMessage];
-      try {
-        localStorage.setItem(`foundmet_chat_${roomId}`, JSON.stringify(updated));
-      } catch {
-        // Ignore storage error
-      }
-      return updated;
-    });
-
+    setSendError("");
+    setMessages((prev) => [...prev, pending]);
+    socket.emit("send_message", pending);
     setInputText("");
+    socket.emit("typing", { roomId, userId: currentUser._id, userName: currentUser.name, isTyping: false });
+  };
 
-    // Notify typing stopped
-    socket.emit("typing", {
-      roomId,
-      userId: currentUser._id,
-      userName: currentUser.name,
-      isTyping: false,
-    });
+  const handleRequestPhoneNumber = () => {
+    if (!activeContact) return;
+    handleSendMessage("I would like to request your mobile number so we can have a quick call.");
+    const updated = { ...sharedPhones, [`req_${activeContact._id}`]: true };
+    setSharedPhones(updated);
+    localStorage.setItem("foundmet_shared_phones", JSON.stringify(updated));
+  };
 
-    // 3. Fallback automated response for demo / test contact if server is in mock mode
-    if (!socket.connected || activeContact._id?.startsWith?.("seed_") || activeContact._id?.startsWith?.("demo_")) {
-      setTimeout(() => {
-        const replies = [
-          `Thanks for reaching out! I'm really excited about building together. What stack are you looking to use?`,
-          `Great to connect, ${currentUser.name}! Would love to set up a quick 15-minute sync this week.`,
-          `Awesome proposal! Looking forward to reviewing the project roadmap.`,
-        ];
-        const autoReply = {
-          id: `reply_${Date.now()}`,
-          roomId,
-          senderId: activeContact._id,
-          senderName: activeContact.name,
-          senderPhoto: activeContact.photo,
-          receiverId: currentUser._id,
-          text: replies[Math.floor(Math.random() * replies.length)],
-          timestamp: new Date().toISOString(),
-        };
-
-        setMessages((prev) => {
-          const updated = [...prev, autoReply];
-          try {
-            localStorage.setItem(`foundmet_chat_${roomId}`, JSON.stringify(updated));
-          } catch {
-            // Ignore
-          }
-          return updated;
-        });
-      }, 1500);
+  const handleShareMyPhoneNumber = () => {
+    if (!activeContact) return;
+    if (!currentUser.phoneNumber) {
+      setSendError("Add your phone number in Settings before sharing it.");
+      return;
     }
+    handleSendMessage(`Here is my mobile number: ${currentUser.phoneNumber}. Looking forward to connecting.`);
+    const updated = { ...sharedPhones, [`shared_${activeContact._id}`]: true };
+    setSharedPhones(updated);
+    localStorage.setItem("foundmet_shared_phones", JSON.stringify(updated));
   };
 
   if (!isOpen) return null;
 
-  // Filter connected founders list
   const connectedFounders = availableFounders.filter(
-    (f) =>
-      f._id !== currentUser?._id &&
-      (connections[f._id] === "connected" || connections[f._id] === "pending" || !connections)
+    (founder) => founder._id !== currentUser?._id && connections[founder._id] === "connected",
   );
+  const contactPhone = activeContact?.phoneNumber || "";
+  const isPhoneSharedWithMe = Boolean(sharedPhones[activeContact?._id]) && Boolean(contactPhone);
+  const phoneRequested = Boolean(sharedPhones[`req_${activeContact?._id}`]);
 
   return (
-    <div
-      className="foundmet-chat-dock position-fixed"
-      style={{
-        bottom: "20px",
-        right: "24px",
-        zIndex: 1055,
-        width: isMinimized ? "auto" : "360px",
-        maxWidth: "calc(100vw - 32px)",
-      }}
-    >
-      {/* Minimized Pill Button */}
+    <div className="foundmet-chat-dock position-fixed">
       {isMinimized ? (
         <button
           type="button"
@@ -249,253 +228,129 @@ export default function ChatWindow({
             setIsMinimized(false);
             setUnreadCount(0);
           }}
-          className="btn btn-foundmet rounded-pill shadow-lg d-flex align-items-center gap-2 py-2 px-3 animate-bounce"
+          className="btn btn-foundmet rounded-pill shadow-lg d-flex align-items-center gap-2 py-2 px-3"
         >
-          <i className="bi bi-chat-dots-fill fs-5"></i>
-          <span className="fw-semibold">
-            {activeContact ? activeContact.name : "Messages"}
-          </span>
-          {unreadCount > 0 && (
-            <span className="badge bg-danger rounded-pill">{unreadCount}</span>
-          )}
+          <i className="bi bi-chat-dots-fill fs-5" />
+          <span className="fw-semibold">{activeContact ? activeContact.name : "Messages"}</span>
+          {unreadCount > 0 && <span className="badge bg-danger rounded-pill">{unreadCount}</span>}
         </button>
       ) : (
-        /* Expanded Chat Card */
-        <div className="card border-0 shadow-lg rounded-4 overflow-hidden d-flex flex-column" style={{ height: "500px" }}>
-          
-          {/* Header */}
-          <div
-            className="p-3 text-white d-flex align-items-center justify-content-between"
-            style={{
-              background: "linear-gradient(135deg, #0B5CFF 0%, #7038F5 100%)",
-            }}
-          >
+        <div className="card border-0 shadow-lg rounded-4 overflow-hidden d-flex flex-column foundmet-chat-card">
+          <div className="p-3 text-white d-flex align-items-center justify-content-between foundmet-chat-header">
             {activeContact ? (
               <div className="d-flex align-items-center gap-2 overflow-hidden">
-                <button
-                  type="button"
-                  className="btn btn-link text-white p-0 me-1"
-                  onClick={() => setActiveContact(null)}
-                  title="All Chats"
-                >
-                  <i className="bi bi-chevron-left fs-5"></i>
+                <button type="button" className="btn btn-link text-white p-0 me-1" onClick={() => setActiveContact(null)} title="All chats">
+                  <i className="bi bi-chevron-left fs-5" />
                 </button>
                 <div className="position-relative">
-                  <img
-                    src={
-                      activeContact.photo ||
-                      `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                        activeContact.name || "F"
-                      )}&background=ffffff&color=0B5CFF&size=80`
-                    }
-                    alt={activeContact.name}
-                    className="rounded-circle border border-white"
-                    style={{ width: "36px", height: "36px", objectFit: "cover" }}
-                  />
-                  <span
-                    className="position-absolute bottom-0 end-0 bg-success rounded-circle border border-white"
-                    style={{ width: "10px", height: "10px" }}
-                  ></span>
+                  <img src={avatarFor(activeContact.name, activeContact.photo)} alt="" className="rounded-circle border border-white" style={{ width: 36, height: 36, objectFit: "cover" }} />
+                  <span className={`position-absolute bottom-0 end-0 rounded-circle border border-white ${onlineUsers.includes(String(activeContact._id)) ? "bg-success" : "bg-secondary"}`} style={{ width: 10, height: 10 }} />
                 </div>
                 <div className="text-truncate">
-                  <h6 className="mb-0 fw-bold text-truncate" style={{ fontSize: "14px" }}>
-                    {activeContact.name}
-                  </h6>
-                  <small className="opacity-90 d-block text-truncate" style={{ fontSize: "11px" }}>
-                    {isContactTyping ? (
-                      <span className="text-warning fw-bold">typing...</span>
-                    ) : (
-                      "Active on FoundMet"
-                    )}
+                  <h6 className="mb-0 fw-bold text-truncate" style={{ fontSize: 14 }}>{activeContact.name}</h6>
+                  <small className="opacity-90 d-block text-truncate" style={{ fontSize: 11 }}>
+                    {isContactTyping ? "typing..." : onlineUsers.includes(String(activeContact._id)) ? "Online" : "Offline"}
                   </small>
                 </div>
               </div>
             ) : (
               <div className="d-flex align-items-center gap-2">
-                <i className="bi bi-chat-quote-fill fs-5"></i>
-                <h6 className="mb-0 fw-bold">Founder Messages</h6>
+                <i className="bi bi-chat-quote-fill fs-5" />
+                <h6 className="mb-0 fw-bold">Messages</h6>
               </div>
             )}
-
-            {/* Window Controls */}
             <div className="d-flex align-items-center gap-1">
-              <button
-                type="button"
-                className="btn btn-link text-white p-1"
-                onClick={() => setIsMinimized(true)}
-                title="Minimize"
-              >
-                <i className="bi bi-dash-lg"></i>
-              </button>
-              <button
-                type="button"
-                className="btn btn-link text-white p-1"
-                onClick={onClose}
-                title="Close"
-              >
-                <i className="bi bi-x-lg"></i>
-              </button>
+              <button type="button" className="btn btn-link text-white p-1" onClick={() => setIsMinimized(true)} title="Minimize"><i className="bi bi-dash-lg" /></button>
+              <button type="button" className="btn btn-link text-white p-1" onClick={onClose} title="Close"><i className="bi bi-x-lg" /></button>
             </div>
           </div>
 
-          {/* Body */}
+          {activeContact && (
+            <div className="p-2 bg-light border-bottom d-flex align-items-center justify-content-between">
+              {isPhoneSharedWithMe ? (
+                <div className="d-flex align-items-center justify-content-between w-100">
+                  <strong className="small text-dark">{contactPhone}</strong>
+                  <div className="d-flex gap-1">
+                    <a href={`https://wa.me/${contactPhone.replace(/[^0-9]/g, "")}`} target="_blank" rel="noreferrer" className="btn btn-sm btn-success rounded-pill px-2 py-0">WA</a>
+                    <a href={`tel:${contactPhone}`} className="btn btn-sm btn-outline-primary rounded-pill px-2 py-0">Call</a>
+                  </div>
+                </div>
+              ) : (
+                <div className="d-flex align-items-center justify-content-between w-100 gap-1">
+                  <button type="button" onClick={handleRequestPhoneNumber} className="btn btn-sm btn-outline-primary rounded-pill py-0 px-2 flex-grow-1" disabled={phoneRequested}>
+                    {phoneRequested ? "Requested" : "Request phone"}
+                  </button>
+                  <button type="button" onClick={handleShareMyPhoneNumber} className="btn btn-sm btn-outline-success rounded-pill py-0 px-2 flex-grow-1">Share my number</button>
+                </div>
+              )}
+            </div>
+          )}
+
           {activeContact ? (
-            /* Active Thread */
             <div className="d-flex flex-column flex-grow-1 bg-light overflow-hidden">
-              
-              {/* Message Feed */}
-              <div className="flex-grow-1 p-3 overflow-y-auto d-flex flex-column gap-2" style={{ maxHeight: "330px" }}>
+              <div className="flex-grow-1 p-3 overflow-y-auto d-flex flex-column gap-2 foundmet-chat-feed">
+                {loadingHistory && <small className="text-secondary">Loading conversation...</small>}
                 {messages.map((msg) => {
                   if (msg.isSystem) {
                     return (
                       <div key={msg.id} className="text-center my-1">
-                        <span className="badge bg-white text-secondary border px-2 py-1 small" style={{ fontSize: "10px" }}>
-                          {msg.text}
-                        </span>
+                        <span className="badge bg-white text-secondary border px-2 py-1 small">{msg.text}</span>
                       </div>
                     );
                   }
-
                   const isMe = String(msg.senderId) === String(currentUser?._id);
-
                   return (
-                    <div
-                      key={msg.id}
-                      className={`d-flex flex-column ${isMe ? "align-items-end" : "align-items-start"}`}
-                    >
-                      <div
-                        className={`p-2 px-3 rounded-4 small shadow-xs ${
-                          isMe
-                            ? "bg-primary text-white"
-                            : "bg-white text-main border"
-                        }`}
-                        style={{
-                          maxWidth: "80%",
-                          wordBreak: "break-word",
-                          borderBottomRightRadius: isMe ? "4px" : "16px",
-                          borderBottomLeftRadius: !isMe ? "4px" : "16px",
-                        }}
-                      >
+                    <div key={msg.id} className={`d-flex flex-column ${isMe ? "align-items-end" : "align-items-start"}`}>
+                      <div className={`p-2 px-3 rounded-4 small ${isMe ? "bg-primary text-white" : "bg-white text-main border"}`} style={{ maxWidth: "82%", wordBreak: "break-word", opacity: msg.pending ? 0.7 : 1 }}>
                         {msg.text}
                       </div>
-                      <small className="text-muted mt-1 px-1" style={{ fontSize: "10px" }}>
-                        {msg.timestamp
-                          ? new Date(msg.timestamp).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })
-                          : ""}
+                      <small className="text-muted mt-1 px-1" style={{ fontSize: 10 }}>
+                        {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""}
                       </small>
                     </div>
                   );
                 })}
-
-                {/* Live Typing indicator */}
                 {isContactTyping && (
                   <div className="d-flex align-items-center gap-1 text-secondary small bg-white p-2 rounded-3 border align-self-start">
-                    <span className="spinner-grow spinner-grow-sm text-primary" style={{ width: "8px", height: "8px" }}></span>
-                    <span style={{ fontSize: "11px" }}>{activeContact.name} is typing...</span>
+                    {activeContact.name} is typing...
                   </div>
                 )}
-
                 <div ref={messagesEndRef} />
               </div>
-
-              {/* Quick Icebreakers */}
-              <div className="px-2 py-1 bg-white border-top border-bottom d-flex gap-1 overflow-x-auto">
-                {[
-                  "👋 Hi, love your idea!",
-                  "☕ Free for an intro call?",
-                  "🤝 Let's explore synergies",
-                ].map((chip) => (
-                  <button
-                    key={chip}
-                    type="button"
-                    onClick={() => handleSendMessage(chip)}
-                    className="btn btn-outline-secondary btn-sm rounded-pill text-nowrap py-0 px-2"
-                    style={{ fontSize: "11px" }}
-                  >
-                    {chip}
-                  </button>
-                ))}
-              </div>
-
-              {/* Input Footer */}
               <form
-                onSubmit={(e) => {
-                  e.preventDefault();
+                onSubmit={(event) => {
+                  event.preventDefault();
                   handleSendMessage();
                 }}
-                className="p-2 bg-white d-flex align-items-center gap-2"
+                className="p-2 bg-white d-flex flex-column gap-1"
               >
-                <input
-                  type="text"
-                  className="form-control rounded-pill border-1"
-                  placeholder="Type a message..."
-                  value={inputText}
-                  onChange={handleInputChange}
-                  style={{ fontSize: "13px" }}
-                />
-                <button
-                  type="submit"
-                  disabled={!inputText.trim()}
-                  className="btn btn-primary rounded-circle d-flex align-items-center justify-content-center p-0"
-                  style={{ width: "36px", height: "36px", flexShrink: 0 }}
-                >
-                  <i className="bi bi-send-fill" style={{ fontSize: "13px" }}></i>
-                </button>
+                {sendError && <small className="text-danger px-2">{sendError}</small>}
+                <div className="d-flex align-items-center gap-2">
+                  <input type="text" className="form-control rounded-pill" placeholder="Type a message..." value={inputText} onChange={handleInputChange} maxLength={2000} />
+                  <button type="submit" disabled={!inputText.trim()} className="btn btn-primary rounded-circle d-flex align-items-center justify-content-center p-0" style={{ width: 36, height: 36 }}>
+                    <i className="bi bi-send-fill" />
+                  </button>
+                </div>
               </form>
             </div>
           ) : (
-            /* Connections / Chats List */
             <div className="flex-grow-1 p-2 bg-white overflow-y-auto">
-              <div className="small text-secondary fw-bold px-2 py-1 text-uppercase" style={{ fontSize: "11px" }}>
-                Connected Founders
-              </div>
-
-              {connectedFounders.length > 0 ? (
-                <div className="d-flex flex-column gap-1">
-                  {connectedFounders.map((founder) => (
-                    <div
-                      key={founder._id}
-                      onClick={() => setActiveContact(founder)}
-                      className="p-2 rounded-3 d-flex align-items-center gap-3 cursor-pointer hover-bg-light border-bottom border-light"
-                      style={{ cursor: "pointer", transition: "background 0.15s" }}
-                    >
-                      <img
-                        src={
-                          founder.photo ||
-                          `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                            founder.name || "Founder"
-                          )}&background=0B5CFF&color=fff&size=80`
-                        }
-                        alt={founder.name}
-                        className="rounded-circle border"
-                        style={{ width: "40px", height: "40px", objectFit: "cover" }}
-                      />
-                      <div className="flex-grow-1 overflow-hidden">
-                        <div className="d-flex justify-content-between align-items-center">
-                          <strong className="text-main small text-truncate">
-                            {founder.name}
-                          </strong>
-                          <span className="badge bg-primary-subtle text-primary" style={{ fontSize: "10px" }}>
-                            {founder.role === "co-founder" ? "Co-Founder" : "Founder"}
-                          </span>
-                        </div>
-                        <small className="text-secondary d-block text-truncate" style={{ fontSize: "11px" }}>
-                          {founder.projectDetails || "Ready to connect & build"}
-                        </small>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
+              <div className="small text-secondary fw-bold px-2 py-1 text-uppercase">Accepted connections ({connectedFounders.length})</div>
+              {connectedFounders.length ? connectedFounders.map((founder) => (
+                <button type="button" key={founder._id} onClick={() => setActiveContact(founder)} className="p-2 rounded-3 d-flex align-items-center gap-3 w-100 border-0 bg-transparent text-start message-contact">
+                  <img src={avatarFor(founder.name, founder.photo)} alt="" className="rounded-circle border" style={{ width: 40, height: 40, objectFit: "cover" }} />
+                  <span className="flex-grow-1 overflow-hidden">
+                    <strong className="d-block text-truncate">{founder.name}</strong>
+                    <small className="text-secondary text-truncate d-block">{founder.projectDetails || "Start a conversation"}</small>
+                  </span>
+                  <span className={`badge ${onlineUsers.includes(String(founder._id)) ? "bg-success-subtle text-success" : "bg-secondary-subtle text-secondary"}`}>
+                    {onlineUsers.includes(String(founder._id)) ? "Online" : "Offline"}
+                  </span>
+                </button>
+              )) : (
                 <div className="text-center py-5 text-secondary">
-                  <i className="bi bi-people fs-2 text-muted"></i>
-                  <p className="small mt-2 mb-0">No connected founders yet.</p>
-                  <small className="text-muted">
-                    Connect with founders from the Explore feed to chat with them!
-                  </small>
+                  <p className="small fw-bold mb-1">No conversations yet</p>
+                  <small>Chat unlocks after a founder accepts your connection request.</small>
                 </div>
               )}
             </div>

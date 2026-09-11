@@ -1,12 +1,8 @@
 import { useState, useRef, useEffect, useId } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "./services/api.js";
 import Header from "./components/Header.jsx";
 import "./global.css";
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ||
-  "https://foundemet-backend.onrender.com/auth/create-account";
 
 // Explicit Steps Sequence
 const STEP_KEYS = [
@@ -15,6 +11,10 @@ const STEP_KEYS = [
   "password",
   "role",
   "address",
+  "matchRole",
+  "canBring",
+  "buildType",
+  "commitment",
   "lookingFor",
   "hasProject",
   "projectStatus", // conditional
@@ -23,6 +23,32 @@ const STEP_KEYS = [
   "photo",
   "review",
 ];
+
+function ChoiceStep({ title, options, value, multiple = false, onSelect }) {
+  return (
+    <div className="fade-in">
+      <h2 className="display-6 fw-bold text-main mb-2">{title}</h2>
+      <p className="text-secondary mb-4">Choose what fits you best.</p>
+      <div className="row g-3">
+        {options.map(([key, label]) => {
+          const selected = multiple ? value.includes(key) : value === key;
+          return (
+            <div className="col-12 col-sm-6" key={key}>
+              <button
+                type="button"
+                className={`role-select-card w-100 p-3 text-start border ${selected ? "selected" : ""}`}
+                onClick={() => onSelect(key)}
+              >
+                <span className="fw-semibold text-capitalize">{label}</span>
+                <i className={`bi ${selected ? "bi-check-circle-fill text-primary" : "bi-circle text-muted"} float-end`}></i>
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export default function Register() {
   const navigate = useNavigate();
@@ -39,6 +65,10 @@ export default function Register() {
     password: "",
     role: "founder", // "founder" | "co-founder"
     address: "",
+    matchRole: "co-founder",
+    canBring: [],
+    buildType: "startup",
+    commitment: "full-time",
     lookingFor: [], // ["cto", "ceo", "cfo"]
     hasProject: "no", // "yes" | "no"
     projectStatus: "idea", // "idea" | "development" | "execution"
@@ -57,6 +87,8 @@ export default function Register() {
   const [validationError, setValidationError] = useState("");
   const [success, setSuccess] = useState(false);
   const [showMobilePreview, setShowMobilePreview] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
 
   // Compute active steps list based on hasProject
   const getActiveSteps = () => {
@@ -108,6 +140,18 @@ export default function Register() {
         : [...prev.lookingFor, roleKey];
       return { ...prev, lookingFor: updated };
     });
+  };
+
+  const toggleChoice = (field, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: Array.isArray(prev[field])
+        ? prev[field].includes(value)
+          ? prev[field].filter((item) => item !== value)
+          : [...prev[field], value]
+        : value,
+    }));
+    setValidationError("");
   };
 
   // Image Upload handler
@@ -196,6 +240,11 @@ export default function Register() {
         setValidationError("Please specify your city or location.");
         return false;
       }
+
+      if (stepKey === "canBring" && formData.canBring.length === 0) {
+        setValidationError("Choose at least one strength.");
+        return false;
+      }
     }
 
     if (stepKey === "projectDetails" && formData.hasProject === "yes") {
@@ -252,6 +301,11 @@ export default function Register() {
 
   // Final Form Submission to Backend
   const handleSubmit = async () => {
+    if (!agreedToTerms) {
+      setValidationError("Please agree to the Terms of Service & Privacy Policy before creating your profile.");
+      return;
+    }
+
     setLoading(true);
     setServerError("");
 
@@ -262,6 +316,9 @@ export default function Register() {
       data.append("password", formData.password);
       data.append("role", formData.role);
       data.append("address", formData.address.trim());
+      data.append("matchRole", formData.matchRole);
+      data.append("buildType", formData.buildType);
+      data.append("commitment", formData.commitment);
       data.append("hasProject", formData.hasProject);
 
       if (formData.hasProject === "yes") {
@@ -279,13 +336,14 @@ export default function Register() {
       formData.lookingFor.forEach((role) => {
         data.append("lookingFor", role);
       });
+      formData.canBring.forEach((strength) => data.append("canBring", strength));
 
       if (imageFile) {
         data.append("image", imageFile);
       }
 
-      const res = await axios.post(
-        `${API_BASE_URL}/auth/create-account`,
+      const res = await api.post(
+        "/auth/create-account",
         data,
         {
           headers: {
@@ -295,9 +353,6 @@ export default function Register() {
       );
 
       if (res.status === 201 || res.status === 200) {
-        if (res.data?.accessToken) {
-          localStorage.setItem("foundmet_token", res.data.accessToken);
-        }
         if (res.data?.user) {
           localStorage.setItem("foundmet_user", JSON.stringify(res.data.user));
         }
@@ -500,6 +555,7 @@ export default function Register() {
                       ref={inputRef}
                       type="text"
                       name="name"
+                      autoComplete="name"
                       value={formData.name}
                       onChange={handleChange}
                       onKeyDown={handleKeyDown}
@@ -529,6 +585,7 @@ export default function Register() {
                       ref={inputRef}
                       type="email"
                       name="email"
+                      autoComplete="email"
                       value={formData.email}
                       onChange={handleChange}
                       onKeyDown={handleKeyDown}
@@ -554,6 +611,7 @@ export default function Register() {
                         ref={inputRef}
                         type={showPassword ? "text" : "password"}
                         name="password"
+                        autoComplete="new-password"
                         value={formData.password}
                         onChange={handleChange}
                         onKeyDown={handleKeyDown}
@@ -716,7 +774,47 @@ export default function Register() {
                 </div>
               )}
 
-              {/* ================= STEP 6: LOOKING FOR ================= */}
+              {currentStep === "matchRole" && (
+                <ChoiceStep
+                  title="What are you looking for?"
+                  options={[
+                    ["co-founder", "Co-founder"],
+                    ["builder", "Someone to build with"],
+                  ]}
+                  value={formData.matchRole}
+                  onSelect={(value) => toggleChoice("matchRole", value)}
+                />
+              )}
+
+              {currentStep === "canBring" && (
+                <ChoiceStep
+                  title="What can you bring?"
+                  options={["technology", "business", "design", "marketing", "product", "other"].map((value) => [value, value[0].toUpperCase() + value.slice(1)])}
+                  value={formData.canBring}
+                  multiple
+                  onSelect={(value) => toggleChoice("canBring", value)}
+                />
+              )}
+
+              {currentStep === "buildType" && (
+                <ChoiceStep
+                  title="What do you want to build?"
+                  options={["startup", "product", "business", "not-sure"].map((value) => [value, value === "not-sure" ? "Not sure yet" : value[0].toUpperCase() + value.slice(1)])}
+                  value={formData.buildType}
+                  onSelect={(value) => toggleChoice("buildType", value)}
+                />
+              )}
+
+              {currentStep === "commitment" && (
+                <ChoiceStep
+                  title="How committed are you?"
+                  options={["full-time", "part-time", "exploring"].map((value) => [value, value[0].toUpperCase() + value.slice(1)])}
+                  value={formData.commitment}
+                  onSelect={(value) => toggleChoice("commitment", value)}
+                />
+              )}
+
+              {/* ================= STEP 10: LOOKING FOR ================= */}
               {currentStep === "lookingFor" && (
                 <div className="fade-in">
                   <h2 className="display-6 fw-bold text-main mb-2">
@@ -731,20 +829,20 @@ export default function Register() {
                     {[
                       {
                         key: "cto",
-                        title: "CTO (Chief Technology Officer)",
-                        desc: "Technical co-founder, full-stack dev, mobile, AI or architecture",
+                        title: "Tech Lead / Developer (CTO)",
+                        desc: "Builds the software, web app, mobile app, or AI",
                         icon: "bi-code-slash",
                       },
                       {
                         key: "ceo",
-                        title: "CEO (Chief Executive Officer)",
-                        desc: "Visionary, business development, fundraising, sales & growth",
+                        title: "Business & Growth Lead (CEO)",
+                        desc: "Leads vision, marketing, sales, or partnerships",
                         icon: "bi-briefcase",
                       },
                       {
                         key: "cfo",
-                        title: "CFO (Chief Financial Officer)",
-                        desc: "Financial operations, investment modeling, accounting & legal",
+                        title: "Finance & Operations Lead (CFO)",
+                        desc: "Manages financial planning, legal, or scaling",
                         icon: "bi-graph-up-arrow",
                       },
                     ].map((item) => {
@@ -788,11 +886,10 @@ export default function Register() {
               {currentStep === "hasProject" && (
                 <div className="fade-in">
                   <h2 className="display-6 fw-bold text-main mb-2">
-                    Do you have a project or startup?
+                    Do you have a project or idea?
                   </h2>
                   <p className="text-secondary mb-4">
-                    Whether it's an idea on paper or a live product, let us
-                    know!
+                    Whether it's an idea on paper or a live product, let us know!
                   </p>
 
                   <div className="row g-3 mb-4">
@@ -818,9 +915,9 @@ export default function Register() {
                         >
                           <i className="bi bi-rocket-takeoff-fill"></i>
                         </div>
-                        <h4 className="fw-bold mb-1">Yes, I have one</h4>
+                        <h4 className="fw-bold mb-1">Yes, I have an idea/project</h4>
                         <p className="text-secondary small mb-0">
-                          I have an active idea, prototype, or launched product
+                          Looking for co-founders to build and scale together
                         </p>
                       </div>
                     </div>
@@ -844,9 +941,9 @@ export default function Register() {
                         >
                           <i className="bi bi-search-heart-fill"></i>
                         </div>
-                        <h4 className="fw-bold mb-1">No, exploring</h4>
+                        <h4 className="fw-bold mb-1">No, exploring to join</h4>
                         <p className="text-secondary small mb-0">
-                          Looking to join and contribute to an existing team
+                          Ready to team up with an exciting early venture
                         </p>
                       </div>
                     </div>
@@ -861,55 +958,54 @@ export default function Register() {
                     What stage is your project in?
                   </h2>
                   <p className="text-secondary mb-4">
-                    Select the status that best describes where you are right
-                    now:
+                    Select where you are in the journey:
                   </p>
 
                   <div className="d-flex flex-column gap-3 mb-4">
                     {[
                       {
                         key: "idea",
-                        label: "Idea Stage",
-                        desc: "Conceptualizing, validating problem, seeking initial co-founders",
-                        icon: "bi-lightbulb",
+                        label: "💡 Idea & Planning",
+                        desc: "Researching the concept and finding the right team",
+                        badge: "Early",
                       },
                       {
                         key: "development",
-                        label: "In Development",
-                        desc: "Active coding, designing MVP, building early prototype",
-                        icon: "bi-gear-wide-connected",
+                        label: "🛠️ In Development",
+                        desc: "Building the initial prototype or first MVP",
+                        badge: "Building",
                       },
                       {
                         key: "execution",
-                        label: "Execution / Live",
-                        desc: "Product has users, early traction, or revenue in market",
-                        icon: "bi-check-circle-fill",
+                        label: "🚀 Live Product",
+                        desc: "Product is live or ready for users",
+                        badge: "Active",
                       },
-                    ].map((stage) => {
-                      const isSelected = formData.projectStatus === stage.key;
+                    ].map((item) => {
+                      const isSelected = formData.projectStatus === item.key;
                       return (
                         <div
-                          key={stage.key}
+                          key={item.key}
                           onClick={() =>
                             setFormData((prev) => ({
                               ...prev,
-                              projectStatus: stage.key,
+                              projectStatus: item.key,
                             }))
                           }
                           className={`p-3 rounded-3 border role-select-card cursor-pointer d-flex align-items-center justify-content-between ${
                             isSelected ? "selected" : ""
                           }`}
                         >
-                          <div className="d-flex align-items-center gap-3">
-                            <div className="role-icon mb-0">
-                              <i className={`bi ${stage.icon}`}></i>
+                          <div>
+                            <div className="d-flex align-items-center gap-2 mb-1">
+                              <h5 className="fw-bold mb-0">{item.label}</h5>
+                              <span className="badge bg-primary-subtle text-primary">
+                                {item.badge}
+                              </span>
                             </div>
-                            <div>
-                              <h6 className="fw-bold mb-0">{stage.label}</h6>
-                              <small className="text-secondary">
-                                {stage.desc}
-                              </small>
-                            </div>
+                            <p className="text-secondary small mb-0">
+                              {item.desc}
+                            </p>
                           </div>
                           <i
                             className={`bi ${
@@ -1189,6 +1285,44 @@ export default function Register() {
                       </button>
                     </div>
                   </div>
+
+                  {/* Terms & Conditions Acceptance */}
+                  <div className="card border-primary-subtle bg-primary-subtle p-3 rounded-3 mb-4">
+                    <div className="form-check d-flex align-items-start gap-2 mb-0">
+                      <input
+                        className="form-check-input mt-1 flex-shrink-0"
+                        type="checkbox"
+                        id="agreeTermsCheck"
+                        checked={agreedToTerms}
+                        onChange={(e) => {
+                          setAgreedToTerms(e.target.checked);
+                          setValidationError("");
+                        }}
+                      />
+                      <label
+                        className="form-check-label small text-main"
+                        htmlFor="agreeTermsCheck"
+                      >
+                        I agree to the{" "}
+                        <button
+                          type="button"
+                          onClick={() => setShowTermsModal(true)}
+                          className="btn btn-link text-primary p-0 fw-bold small text-decoration-underline"
+                        >
+                          FoundMet Terms of Service
+                        </button>{" "}
+                        and{" "}
+                        <Link
+                          to="/privacy"
+                          target="_blank"
+                          className="text-primary fw-bold text-decoration-underline"
+                        >
+                          Privacy Policy
+                        </Link>
+                        . I understand my phone number and private contact details remain private until I approve sharing with connected builders.
+                      </label>
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -1217,7 +1351,7 @@ export default function Register() {
                   <button
                     type="button"
                     onClick={handleSubmit}
-                    disabled={loading}
+                    disabled={loading || !agreedToTerms}
                     className="btn btn-foundmet px-5 py-2 rounded-pill fs-6 fw-bold d-flex align-items-center gap-2"
                   >
                     {loading ? (
@@ -1373,6 +1507,61 @@ export default function Register() {
           </div>
         </div>
       </main>
+
+      {/* Interactive Terms & Conditions Modal */}
+      {showTermsModal && (
+        <div
+          className="modal fade show d-block"
+          tabIndex="-1"
+          style={{ backgroundColor: "rgba(7, 26, 61, 0.7)", zIndex: 1100 }}
+          onClick={() => setShowTermsModal(false)}
+        >
+          <div
+            className="modal-dialog modal-dialog-centered modal-dialog-scrollable"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: "560px" }}
+          >
+            <div className="modal-content border-0 rounded-4 shadow-lg overflow-hidden">
+              <div className="modal-header border-0 bg-primary text-white p-3 px-4">
+                <h5 className="modal-title fw-bold mb-0">FoundMet Terms of Service</h5>
+                <button
+                  type="button"
+                  className="btn-close btn-close-white"
+                  onClick={() => setShowTermsModal(false)}
+                ></button>
+              </div>
+              <div className="modal-body p-4 small text-secondary">
+                <h6 className="fw-bold text-dark mb-1">1. 100% Idea & Code Ownership</h6>
+                <p>
+                  You retain full ownership of your ideas, intellectual property, and code. FoundMet takes 0 equity and 0 IP.
+                </p>
+
+                <h6 className="fw-bold text-dark mb-1">2. Contact & Mobile Privacy</h6>
+                <p>
+                  Your phone number is strictly private. It is never displayed publicly and can only be shared with your explicit approval after mutual connection acceptance.
+                </p>
+
+                <h6 className="fw-bold text-dark mb-1">3. Respectful Collaboration</h6>
+                <p>
+                  FoundMet is a community of builders. Spam, fraudulent pitches, or harassment will result in immediate account termination.
+                </p>
+              </div>
+              <div className="modal-footer border-top p-3 bg-light">
+                <button
+                  type="button"
+                  className="btn btn-foundmet rounded-pill px-4"
+                  onClick={() => {
+                    setAgreedToTerms(true);
+                    setShowTermsModal(false);
+                  }}
+                >
+                  I Agree & Accept
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

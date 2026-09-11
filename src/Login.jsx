@@ -1,12 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "./services/api.js";
 import Header from "./components/Header.jsx";
 import "./global.css";
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ||
-  "https://foundemet-backend.onrender.com/auth/login";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -24,27 +20,6 @@ export default function Login() {
     setError("");
   };
 
-  const handleDemoLogin = () => {
-    const demoUser = {
-      _id: "demo_user_" + Date.now(),
-      name: "Alex Morgan",
-      email: "alex@foundmet.io",
-      role: "founder",
-      hasProject: "yes",
-      projectDetails:
-        "Building an AI-driven collaboration workspace for early-stage startup teams to find co-founders and track milestones.",
-      projectLink: "https://foundmet.io",
-      projectStatus: "development",
-      lookingFor: ["cto", "cfo"],
-      address: "Bangalore, India",
-      photo:
-        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-    };
-    localStorage.setItem("foundmet_token", "demo_jwt_token_" + Date.now());
-    localStorage.setItem("foundmet_user", JSON.stringify(demoUser));
-    navigate("/dashboard");
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.email.trim() || !formData.password) {
@@ -56,14 +31,11 @@ export default function Login() {
     setError("");
 
     try {
-      const res = await axios.post(`${API_BASE_URL}/auth/login`, {
+      const res = await api.post("/auth/login", {
         email: formData.email.trim().toLowerCase(),
         password: formData.password,
       });
 
-      if (res.data?.accessToken) {
-        localStorage.setItem("foundmet_token", res.data.accessToken);
-      }
       if (res.data?.user) {
         localStorage.setItem("foundmet_user", JSON.stringify(res.data.user));
       }
@@ -73,7 +45,7 @@ export default function Login() {
       console.error("Login error:", err);
       const msg =
         err.response?.data?.message ||
-        "Login failed. Please verify your credentials or try the Demo Login.";
+        "Login failed. Please verify your credentials and try again.";
       setError(msg);
     } finally {
       setLoading(false);
@@ -117,6 +89,7 @@ export default function Login() {
                   <input
                     type="email"
                     name="email"
+                    autoComplete="email"
                     value={formData.email}
                     onChange={handleChange}
                     placeholder="founder@example.com"
@@ -139,6 +112,7 @@ export default function Login() {
                   <input
                     type={showPassword ? "text" : "password"}
                     name="password"
+                    autoComplete="current-password"
                     value={formData.password}
                     onChange={handleChange}
                     placeholder="Your password"
@@ -178,19 +152,6 @@ export default function Login() {
                   </>
                 )}
               </button>
-
-              {/* Demo Account Button for instant testing */}
-              <div className="d-grid mb-4">
-                <button
-                  type="button"
-                  onClick={handleDemoLogin}
-                  className="btn btn-outline-secondary btn-sm rounded-3 py-2 d-flex align-items-center justify-content-center gap-2"
-                  title="Test dashboard immediately without credentials"
-                >
-                  <i className="bi bi-lightning-charge-fill text-warning"></i>
-                  <span>Quick Demo Founder Login</span>
-                </button>
-              </div>
 
               <div className="text-center border-top pt-3">
                 <span className="text-secondary small">
