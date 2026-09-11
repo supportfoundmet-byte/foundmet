@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /app
+Disallow: /superadmin
+Disallow: /login
+Disallow: /register
+
+Sitemap: https://foundmet.com/sitemap.xml

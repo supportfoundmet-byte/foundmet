@@ -160,16 +160,21 @@ export default function ChatWindow({
     }, 1500);
   };
 
+  const deliverViaHttp = async (pending) => {
+    const { data } = await api.post("/api/v1/messages", {
+      receiverId: pending.receiverId,
+      text: pending.text,
+      clientId: pending.clientId,
+    });
+    if (data?.message) {
+      setMessages((prev) => prev.map((item) => (item.id === pending.clientId ? { ...data.message, pending: false } : item)));
+    }
+  };
+
   const handleSendMessage = (textToSend = null) => {
     const text = (typeof textToSend === "string" ? textToSend : inputText).trim();
     if (!text || !roomId || !currentUser || !activeContact) return;
     const socket = getSocket();
-    if (!socket.connected) {
-      setSendError("Chat is reconnecting. Please try again in a moment.");
-      registerPresence(currentUser._id);
-      return;
-    }
-
     const clientId = `msg_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     const pending = {
       id: clientId,
@@ -185,9 +190,32 @@ export default function ChatWindow({
     };
     setSendError("");
     setMessages((prev) => [...prev, pending]);
-    socket.emit("send_message", pending);
     setInputText("");
+
+    const fail = (message) => {
+      setSendError(message);
+      setMessages((prev) => prev.filter((item) => item.id !== clientId));
+    };
+
+    const sendHttp = () => {
+      deliverViaHttp(pending).catch((error) => {
+        fail(error.response?.data?.message || error.userMessage || "Message could not be sent.");
+      });
+    };
+
+    if (!socket.connected) {
+      registerPresence(currentUser._id);
+      sendHttp();
+      return;
+    }
+
     socket.emit("typing", { roomId, userId: currentUser._id, userName: currentUser.name, isTyping: false });
+    socket.timeout(8000).emit("send_message", pending, (error, response) => {
+      if (error || !response?.ok) sendHttp();
+      else if (response.payload) {
+        setMessages((prev) => prev.map((item) => (item.id === clientId ? { ...response.payload, pending: false } : item)));
+      }
+    });
   };
 
   const handleRequestPhoneNumber = () => {

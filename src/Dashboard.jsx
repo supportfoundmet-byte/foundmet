@@ -187,6 +187,14 @@ export default function Dashboard() {
           notifyBrowser("New connection request", `${newest.fromUser?.name || "A founder"} wants to connect with you.`);
         }
         const statuses = {};
+        (data.sentRequests || []).forEach((connection) => {
+          const other = String(connection.fromUser?._id) === String(currentUser._id) ? connection.toUser : connection.fromUser;
+          if (other?._id) statuses[other._id] = "pending";
+        });
+        (data.receivedRequests || []).forEach((connection) => {
+          const other = String(connection.fromUser?._id) === String(currentUser._id) ? connection.toUser : connection.fromUser;
+          if (other?._id) statuses[other._id] = "pending";
+        });
         profiles.forEach((profile) => { statuses[profile._id] = "connected"; });
         setConnections(statuses);
         localStorage.setItem("foundmet_connections", JSON.stringify(statuses));

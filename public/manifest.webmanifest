@@ -1,0 +1,17 @@
+{
+  "name": "FoundMet",
+  "short_name": "FoundMet",
+  "description": "Find co-founders nearby and build together.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F8FAFF",
+  "theme_color": "#0B5CFF",
+  "lang": "en-IN",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64",
+      "type": "image/x-icon"
+    }
+  ]
+}

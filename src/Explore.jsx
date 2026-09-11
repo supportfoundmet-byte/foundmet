@@ -150,12 +150,19 @@ export default function Explore() {
         setLoading(true);
         setFeedError("");
         const response = await api.get("/api/v1/users", {
-          params: { page: 1, limit: 50, search: search.trim() || undefined },
+          params: {
+            page: 1,
+            limit: 50,
+            search: search.trim() || undefined,
+            lat: liveUserCoords?.lat,
+            lng: liveUserCoords?.lng,
+            radiusKm: distanceFilter === "all" ? undefined : Number(distanceFilter),
+          },
           timeout: 8000,
         });
 
         if (response.data?.users && response.data.users.length > 0) {
-          setFounders(response.data.users);
+          setFounders(response.data.users.filter((founder) => String(founder._id) !== String(currentUser?._id)));
         } else setFounders([]);
       } catch (err) {
         console.warn("Backend feed unavailable:", err.message);
@@ -241,7 +248,8 @@ export default function Explore() {
       const { data } = await api.post(`/api/v1/connections/request/${founder._id}`, {
         message: connectionNote.trim().slice(0, 500),
       });
-      const updated = { ...connections, [founder._id]: data.connection?.status || "pending" };
+      const nextStatus = data.connection?.status === "accepted" ? "connected" : "pending";
+      const updated = { ...connections, [founder._id]: nextStatus };
       setConnections(updated);
       localStorage.setItem("foundmet_connections", JSON.stringify(updated));
       setConnectionNote("");

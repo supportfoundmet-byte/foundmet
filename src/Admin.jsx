@@ -39,18 +39,29 @@ export default function Admin() {
   }, [adminPage, query]);
 
   useEffect(() => {
+    let cancelled = false;
     api.get("/admin/session")
-      .then(async ({ data: result }) => {
-        setAdmin(result.admin);
-        try {
-          await loadData();
-        } catch (error) {
-          setDataError(error.response?.data?.message || "Admin data could not be loaded.");
-        }
+      .then(({ data: result }) => {
+        if (!cancelled) setAdmin(result.admin);
       })
-      .catch(() => setAdmin(null))
-      .finally(() => setLoading(false));
-  }, [loadData]);
+      .catch(() => {
+        if (!cancelled) setAdmin(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!admin) return undefined;
+    loadData().catch((error) => {
+      setDataError(error.response?.data?.message || "Admin data could not be loaded.");
+    });
+    return undefined;
+  }, [admin, loadData]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -76,11 +87,17 @@ export default function Admin() {
 
   const login = async (event) => {
     event.preventDefault();
+    setBusy(true);
     setMessage({ type: "", text: "" });
-    await run(async () => {
+    try {
       const { data: result } = await api.post("/admin/login", credentials);
       setAdmin(result.admin);
-    }, "Signed in securely.");
+      setMessage({ type: "success", text: "Signed in securely." });
+    } catch (error) {
+      setMessage({ type: "danger", text: error.response?.data?.message || "Could not sign in." });
+    } finally {
+      setBusy(false);
+    }
   };
 
   const createAdmin = async (event) => {
