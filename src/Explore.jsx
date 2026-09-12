@@ -25,7 +25,6 @@ const TABS = [
   { key: "founders", label: "Founders", icon: "bi-person-badge" },
   { key: "co-founders", label: "Co-Founders", icon: "bi-people" },
   { key: "has-project", label: "With Project", icon: "bi-rocket-takeoff" },
-  
 ];
 
 const RADIUS_OPTIONS = [
@@ -42,6 +41,12 @@ const STAGE_OPTIONS = [
   { key: "development", label: "In development" },
   { key: "execution", label: "Live / execution" },
 ];
+
+const STAGE_META = {
+  idea: { label: "Idea stage", icon: "bi-lightbulb", className: "stage-idea" },
+  development: { label: "In development", icon: "bi-code-slash", className: "stage-development" },
+  execution: { label: "Live / execution", icon: "bi-rocket-takeoff-fill", className: "stage-execution" },
+};
 
 export default function Explore() {
   const [founders, setFounders] = useState([]);
@@ -305,15 +310,15 @@ export default function Explore() {
       showToast(data.message || `Connection request sent to ${founder.name}.`);
       notifyBrowser("Connection request sent", `Your request to ${founder.name} is pending.`);
     } catch (error) {
-    if (error.response?.status === 401) {
-      localStorage.removeItem("foundmet_user");
-      showToast("Your session expired. Please sign in again.");
-      setAuthPromptFounder(founder);
-    } else if (error.response?.status === 429) {
-      showToast("You have sent too many requests. Please try again shortly.");
-    } else {
-      showToast(error.response?.data?.message || error.userMessage || "Unable to send connection request. Please try again.");
-    }
+      if (error.response?.status === 401) {
+        localStorage.removeItem("foundmet_user");
+        showToast("Your session expired. Please sign in again.");
+        setAuthPromptFounder(founder);
+      } else if (error.response?.status === 429) {
+        showToast("You have sent too many requests. Please try again shortly.");
+      } else {
+        showToast(error.response?.data?.message || error.userMessage || "Unable to send connection request. Please try again.");
+      }
     } finally {
       setConnectionSending(false);
     }
@@ -425,8 +430,8 @@ export default function Explore() {
     const lookingForArr = Array.isArray(founder.lookingFor)
       ? founder.lookingFor
       : typeof founder.lookingFor === "string"
-      ? [founder.lookingFor]
-      : [];
+        ? [founder.lookingFor]
+        : [];
 
     const matchesSearch =
       !q ||
@@ -443,10 +448,6 @@ export default function Explore() {
       matchesTab = founder.role?.toLowerCase() === "co-founder";
     } else if (activeTab === "has-project") {
       matchesTab = founder.hasProject === "yes";
-    } else if (activeTab === "looking-cto") {
-      matchesTab = lookingForArr.map((r) => r.toLowerCase()).includes("cto");
-    } else if (activeTab === "looking-ceo") {
-      matchesTab = lookingForArr.map((r) => r.toLowerCase()).includes("ceo");
     }
 
     let matchesStage = true;
@@ -515,9 +516,32 @@ export default function Explore() {
           font-size:10px;font-weight:700;border-radius:50%;width:16px;height:16px;
           display:flex;align-items:center;justify-content:center;}
         .explore-feed-scroll{flex:1;overflow-y:auto;padding:22px 24px 40px;}
-        .founders-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:18px;}
-        .founder-card{transition:transform .15s ease,box-shadow .15s ease;}
-        .founder-card:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(15,23,42,.08)!important;}
+        .founders-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px;}
+
+        /* --- Founder card --- */
+        .founder-card{transition:transform .15s ease,box-shadow .15s ease;position:relative;}
+        .founder-card:hover{transform:translateY(-3px);box-shadow:0 12px 28px rgba(15,23,42,.10)!important;}
+        .founder-card-avatar-wrap{position:relative;flex-shrink:0;}
+        .founder-verified-dot{position:absolute;bottom:-1px;right:-1px;width:14px;height:14px;border-radius:50%;
+          background:#16a34a;border:2px solid #fff;}
+        .founder-rating-pill{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:700;
+          color:#8a5a00;background:#FFF4D6;border-radius:20px;padding:2px 7px;line-height:1.4;}
+        .stage-pill{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;
+          border-radius:20px;padding:3px 8px;letter-spacing:.01em;}
+        .stage-idea{background:#EEF2FF;color:#4338CA;}
+        .stage-development{background:#FFF7E6;color:#B45309;}
+        .stage-execution{background:#ECFDF3;color:#067647;}
+        .founder-bio{font-size:12.5px;color:#5c6579;line-height:1.45;min-height:34px;}
+        .endorsement-row{display:flex;flex-wrap:wrap;gap:5px;}
+        .endorsement-chip{font-size:10.5px;font-weight:600;color:#8a5a00;background:#FFF9EC;
+          border:1px solid #F4E2B4;border-radius:20px;padding:2px 8px;white-space:nowrap;}
+        .skill-chip{font-size:10.5px;font-weight:600;color:#0B5CFF;background:#EEF4FF;
+          border:1px solid #D7E4FF;border-radius:20px;padding:2px 8px;white-space:nowrap;}
+        .role-chip{font-size:9.5px;font-weight:700;letter-spacing:.02em;color:#4a5468;
+          background:#F1F3F7;border-radius:6px;padding:2px 6px;}
+        .founder-card-footer-loc{font-size:11px;color:#8a93a3;display:flex;align-items:center;gap:4px;}
+
+        .sidebar-backdrop{position:fixed;inset:0;background:rgba(7,26,61,.45);z-index:1049;}
         @media (max-width: 991.98px){
           .explore-sidebar{position:fixed;top:0;left:0;height:100%;width:86%;max-width:320px;
             transform:translateX(-105%);transition:transform .25s ease;z-index:1055;
@@ -791,13 +815,16 @@ export default function Explore() {
                   const isSelf = currentUser && currentUser._id === founder._id;
 
                   const distanceKm = founder.distanceKm ?? getDistanceToFounder(liveUserCoords, founder);
-                  const rating = ratingsCache[founder._id] || { averageStars: 5.0, totalRatings: 1 };
+                  const rating = ratingsCache[founder._id] || { averageStars: 5.0, totalRatings: 1, tags: [] };
+                  const topEndorsements = (rating.tags || []).slice(0, 2);
+                  const topSkills = (Array.isArray(founder.canBring) ? founder.canBring : []).slice(0, 2);
+                  const stageMeta = STAGE_META[founder.projectStatus?.toLowerCase()] || null;
 
                   const lookingFor = Array.isArray(founder.lookingFor)
                     ? founder.lookingFor
                     : typeof founder.lookingFor === "string"
-                    ? [founder.lookingFor]
-                    : [];
+                      ? [founder.lookingFor]
+                      : [];
 
                   return (
                     <div
@@ -805,32 +832,36 @@ export default function Explore() {
                       key={founder._id}
                     >
                       {/* Top Row: Avatar, Name, Role, Rating & Distance */}
-                      <div className="d-flex align-items-center justify-content-between mb-2">
+                      <div className="d-flex align-items-start justify-content-between mb-2">
                         <div
                           className="d-flex align-items-center gap-2 cursor-pointer text-truncate flex-grow-1"
                           onClick={() => setSelectedFounder(founder)}
                         >
-                          <img
-                            src={
-                              founder.photo ||
-                              `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                                founder.name || "Founder"
-                              )}&background=0B5CFF&color=fff&size=100`
-                            }
-                            alt={founder.name}
-                            className="rounded-circle border flex-shrink-0"
-                            style={{ width: "42px", height: "42px", objectFit: "cover" }}
-                          />
+                          <div className="founder-card-avatar-wrap">
+                            <img
+                              src={
+                                founder.photo ||
+                                `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                                  founder.name || "Founder"
+                                )}&background=0B5CFF&color=fff&size=100`
+                              }
+                              alt={founder.name}
+                              className="rounded-circle border flex-shrink-0"
+                              style={{ width: "46px", height: "46px", objectFit: "cover" }}
+                            />
+                            {rating.totalRatings >= 3 && <span className="founder-verified-dot" title="Well-endorsed founder"></span>}
+                          </div>
                           <div className="text-truncate">
                             <h6 className="mb-0 fw-bold text-main text-truncate hover-primary" style={{ fontSize: "14px" }}>
                               {founder.name}
                             </h6>
-                            <div className="d-flex align-items-center gap-1 mt-0">
+                            <div className="d-flex align-items-center gap-2 mt-1">
                               <span className="badge bg-primary-subtle text-primary text-capitalize" style={{ fontSize: "9px", padding: "2px 6px" }}>
                                 {founder.role === "co-founder" ? "Co-Founder" : "Founder"}
                               </span>
-                              <span className="text-warning fw-bold small" style={{ fontSize: "11px" }}>
+                              <span className="founder-rating-pill">
                                 ⭐ {rating.averageStars}
+                                <span className="opacity-75 fw-normal">({rating.totalRatings})</span>
                               </span>
                             </div>
                           </div>
@@ -843,8 +874,8 @@ export default function Explore() {
                               distanceKm <= 50
                                 ? "bg-success-subtle text-success border border-success-subtle"
                                 : distanceKm <= 80
-                                ? "bg-primary-subtle text-primary border border-primary-subtle"
-                                : "bg-light text-secondary border"
+                                  ? "bg-primary-subtle text-primary border border-primary-subtle"
+                                  : "bg-light text-secondary border"
                             }`}
                             style={{ fontSize: "10px" }}
                           >
@@ -854,27 +885,46 @@ export default function Explore() {
                         )}
                       </div>
 
-                      {/* Minimal 1-Line Description */}
-                      <div className="mb-2">
-                        <p className="small text-secondary mb-0 text-truncate" style={{ fontSize: "12px" }}>
-                          {founder.hasProject === "yes" && founder.projectDetails
-                            ? founder.projectDetails
-                            : "Open to partner on new startup opportunities."}
-                        </p>
+                      {/* Stage + one-line pitch — what makes this founder worth meeting */}
+                      <div className="mb-2 d-flex align-items-center gap-2 flex-wrap">
+                        {stageMeta && (
+                          <span className={`stage-pill ${stageMeta.className}`}>
+                            <i className={`bi ${stageMeta.icon}`}></i>
+                            {stageMeta.label}
+                          </span>
+                        )}
                       </div>
+                      <p className="founder-bio mb-2">
+                        {founder.hasProject === "yes" && founder.projectDetails
+                          ? founder.projectDetails
+                          : "Open to partner on new startup opportunities."}
+                      </p>
 
-                      {/* Compact Looking For Tags */}
+                      {/* Endorsements + skills they bring — the "why this person" signal */}
+                      {(topEndorsements.length > 0 || topSkills.length > 0) && (
+                        <div className="endorsement-row mb-2">
+                          {topEndorsements.map((tag) => (
+                            <span key={tag} className="endorsement-chip">✓ {tag}</span>
+                          ))}
+                          {topSkills.map((skill) => (
+                            <span key={skill} className="skill-chip">{skill}</span>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Looking for + location */}
                       <div className="d-flex align-items-center justify-content-between mb-3 mt-auto pt-1">
                         <div className="d-flex flex-wrap gap-1">
                           {lookingFor.slice(0, 3).map((r) => (
-                            <span key={r} className="skill-tag" style={{ fontSize: "9px", padding: "1px 6px" }}>
-                              {r.toUpperCase()}
+                            <span key={r} className="role-chip">
+                              Wants {r}
                             </span>
                           ))}
                         </div>
-                        <small className="text-muted" style={{ fontSize: "11px" }}>
+                        <span className="founder-card-footer-loc">
+                          <i className="bi bi-pin-map"></i>
                           {founder.address?.split(",")[0] || "Global"}
-                        </small>
+                        </span>
                       </div>
 
                       {/* Minimal Action Buttons */}
@@ -892,8 +942,8 @@ export default function Explore() {
                                 isConnected
                                   ? "btn-success"
                                   : isPending
-                                  ? "btn-secondary"
-                                  : "btn-foundmet"
+                                    ? "btn-secondary"
+                                    : "btn-foundmet"
                               }`}
                               style={{ fontSize: "12px" }}
                             >
@@ -974,7 +1024,7 @@ export default function Explore() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="modal-content border-0 rounded-4 shadow-lg overflow-hidden">
-              
+
               {/* Header */}
               <div
                 className="p-4 text-white position-relative"
@@ -1002,7 +1052,7 @@ export default function Explore() {
                   />
                   <div>
                     <h3 className="fw-bold mb-1">{selectedFounder.name}</h3>
-                    <div className="d-flex align-items-center gap-2">
+                    <div className="d-flex align-items-center gap-2 flex-wrap">
                       <span className="badge bg-white text-primary text-capitalize fw-bold">
                         {selectedFounder.role === "co-founder" ? "Co-Founder" : "Founder"}
                       </span>
@@ -1044,6 +1094,7 @@ export default function Explore() {
                     </select>
                   </div>
                 )}
+
                 {/* Project Details */}
                 <div className="mb-4">
                   <h6 className="fw-bold text-uppercase text-secondary small mb-2">
@@ -1075,6 +1126,22 @@ export default function Explore() {
                   )}
                 </div>
 
+                {/* What they bring — skills, a concrete, attractive signal */}
+                {Array.isArray(selectedFounder.canBring) && selectedFounder.canBring.length > 0 && (
+                  <div className="mb-4">
+                    <h6 className="fw-bold text-uppercase text-secondary small mb-2">
+                      What {selectedFounder.name?.split(" ")[0] || "They"} Bring
+                    </h6>
+                    <div className="d-flex flex-wrap gap-2">
+                      {selectedFounder.canBring.map((skill) => (
+                        <span className="skill-chip" style={{ fontSize: "12px", padding: "5px 12px" }} key={skill}>
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Looking For */}
                 <div className="mb-4">
                   <h6 className="fw-bold text-uppercase text-secondary small mb-2">
@@ -1093,7 +1160,7 @@ export default function Explore() {
                   </div>
                 </div>
 
-                {/* Reputation & Ratings */}
+                {/* Reputation & Ratings — endorsement tags make the profile feel earned, not just claimed */}
                 <div className="mb-4 p-3 bg-light rounded-3 border">
                   <div className="d-flex justify-content-between align-items-center mb-2">
                     <h6 className="fw-bold text-uppercase text-secondary small mb-0">
@@ -1107,14 +1174,23 @@ export default function Explore() {
                       <i className="bi bi-star-fill text-warning me-1"></i> Endorse
                     </button>
                   </div>
-                  <div className="d-flex align-items-center gap-2">
+                  <div className="d-flex align-items-center gap-2 mb-2">
                     <span className="fs-5 fw-bold text-dark">
                       ⭐ {(ratingsCache[selectedFounder._id]?.averageStars) || "5.0"}
                     </span>
                     <small className="text-secondary">
-                      ({(ratingsCache[selectedFounder._id]?.totalRatings) || 1} peer review)
+                      ({(ratingsCache[selectedFounder._id]?.totalRatings) || 1} peer review{(ratingsCache[selectedFounder._id]?.totalRatings || 1) === 1 ? "" : "s"})
                     </small>
                   </div>
+                  {(ratingsCache[selectedFounder._id]?.tags || []).length > 0 && (
+                    <div className="d-flex flex-wrap gap-2">
+                      {ratingsCache[selectedFounder._id].tags.map((tag) => (
+                        <span className="endorsement-chip" style={{ fontSize: "12px", padding: "4px 10px" }} key={tag}>
+                          ✓ {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Mobile Number & Contact Sharing (PRD + User Explicit Requirement) */}
