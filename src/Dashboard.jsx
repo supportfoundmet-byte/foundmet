@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import Header from "./components/Header.jsx";
+
 import ChatWindow from "./components/ChatWindow.jsx";
 import RatingModal from "./components/RatingModal.jsx";
+import DashboardSidebar from "./components/DashboardSidebar.jsx";
+import { DashboardHero, DashboardToast } from "./components/DashboardChrome.jsx";
 import api from "./services/api.js";
 import { disconnectSocket } from "./services/socket.js";
 import { notifyBrowser } from "./services/notifications.js";
@@ -40,7 +42,7 @@ export default function Dashboard() {
   const [connectionError, setConnectionError] = useState("");
 
   // Stored phone sharing
-  const [sharedPhones, setSharedPhones] = useState(() => {
+  const [sharedPhones] = useState(() => {
     try {
       const stored = localStorage.getItem("foundmet_shared_phones");
       return stored ? JSON.parse(stored) : {};
@@ -134,7 +136,12 @@ export default function Dashboard() {
       .catch((error) => {
         const code = error.response?.data?.errorCode;
         const status = error.response?.status;
-        if (status === 401 || code === "ACCOUNT_BANNED" || code === "ACCOUNT_SUSPENDED" || code === "ACCOUNT_UNAVAILABLE") {
+        if (
+          status === 401 ||
+          code === "ACCOUNT_BANNED" ||
+          code === "ACCOUNT_SUSPENDED" ||
+          code === "ACCOUNT_UNAVAILABLE"
+        ) {
           localStorage.removeItem("foundmet_user");
           setCurrentUser(null);
           navigate("/login", { replace: true });
@@ -504,8 +511,8 @@ export default function Dashboard() {
   if (!currentUser) {
     return (
       <div className="dashboard-page min-vh-100 bg-background d-flex flex-column">
-        <Header />
-        <div className="container my-auto py-5 text-center">
+      
+        <div className="container my-auto py-5 text-center px-3">
           <div
             className="card foundmet-card border-0 shadow-sm p-4 p-md-5 mx-auto bg-white"
             style={{ maxWidth: "480px" }}
@@ -540,25 +547,12 @@ export default function Dashboard() {
 
   return (
     <div className="dashboard-page min-vh-100 bg-background d-flex flex-column">
-      <Header />
+      <DashboardToast
+        message={toastMessage}
+        onClose={() => setToastMessage("")}
+      />
 
-      {/* Floating Toast */}
-      {toastMessage && (
-        <div
-          className="position-fixed bottom-0 end-0 m-4 p-3 bg-dark text-white rounded-4 shadow-lg d-flex align-items-center gap-3 animate-fade-in"
-          style={{ zIndex: 1065 }}
-        >
-          <i className="bi bi-info-circle-fill text-primary fs-5"></i>
-          <span className="small fw-semibold">{toastMessage}</span>
-          <button
-            type="button"
-            className="btn-close btn-close-white ms-auto"
-            onClick={() => setToastMessage("")}
-          ></button>
-        </div>
-      )}
-
-      <div className="container-fluid flex-grow-1 px-lg-4 py-4">
+      <div className="dashboard-shell container-fluid flex-grow-1 px-3 px-lg-4 py-4">
         {connectionError && (
           <div
             className="alert alert-warning d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3"
@@ -577,165 +571,25 @@ export default function Dashboard() {
             </button>
           </div>
         )}
-        <div className="row g-4">
-          {/* ================= SIDEBAR ================= */}
-          <div className="col-12 col-lg-3 col-xl-2">
-            <div
-              className="dashboard-sidebar card foundmet-card border-0 shadow-sm p-3 sticky-top bg-white"
-              style={{ top: "85px" }}
-            >
-              {/* Profile Card */}
-              <div className="text-center pb-3 border-bottom mb-3">
-                <img
-                  src={
-                    currentUser.photo ||
-                    `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                      currentUser.name || "Founder",
-                    )}&background=0B5CFF&color=fff&size=100`
-                  }
-                  alt={currentUser.name}
-                  className="rounded-circle border mb-2 shadow-xs"
-                  style={{ width: "64px", height: "64px", objectFit: "cover" }}
-                />
-                <h6 className="fw-bold mb-0 text-main">{currentUser.name}</h6>
-                <span className="badge bg-primary text-white text-capitalize mt-1">
-                  {currentUser.role === "co-founder" ? "Co-Founder" : "Founder"}
-                </span>
-                <small className="text-secondary d-block mt-1">
-                  <i className="bi bi-geo-alt me-1"></i>
-                  {currentUser.address || "Bangalore, India"}
-                </small>
-              </div>
-
-              {/* Menu Links */}
-              <nav
-                className="dashboard-menu nav flex-column gap-1"
-                aria-label="Dashboard sections"
-              >
-                {[
-                  {
-                    key: "overview",
-                    label: "Overview",
-                    icon: "bi-speedometer2",
-                  },
-                  {
-                    key: "posts",
-                    label: "Posts",
-                    icon: "bi-pencil-square",
-                    count: posts.length,
-                  },
-                  {
-                    key: "connections",
-                    label: "Connections",
-                    icon: "bi-people",
-                    count: totalConnectionsCount,
-                  },
-                  {
-                    key: "messages",
-                    label: "Messages / Chat",
-                    icon: "bi-chat-dots-fill",
-                  },
-                  {
-                    key: "projects",
-                    label: "My Project",
-                    icon: "bi-rocket-takeoff",
-                  },
-                  {
-                    key: "ideas",
-                    label: "Startup Ideas",
-                    icon: "bi-lightbulb",
-                    count: ideas.length,
-                  },
-                  {
-                    key: "notifications",
-                    label: "Alerts",
-                    icon: "bi-bell",
-                    count:
-                      connectionNotifications.length +
-                      (currentUser.congratulations?.length || 0),
-                  },
-                  { key: "settings", label: "Settings", icon: "bi-gear" },
-                ].map((item) => (
-                  <button
-                    key={item.key}
-                    type="button"
-                    onClick={() => setActiveTab(item.key)}
-                    className={`btn text-start d-flex align-items-center justify-content-between px-3 py-2 rounded-3 border-0 ${
-                      activeTab === item.key
-                        ? "btn-primary text-white fw-bold"
-                        : "btn-light text-secondary"
-                    }`}
-                  >
-                    <div className="d-flex align-items-center gap-2">
-                      <i className={`bi ${item.icon}`}></i>
-                      <span className="small">{item.label}</span>
-                    </div>
-                    {item.count !== undefined && (
-                      <span
-                        className={`badge rounded-pill ${activeTab === item.key ? "bg-white text-primary" : "bg-primary text-white"}`}
-                        style={{ fontSize: "10px" }}
-                      >
-                        {item.count}
-                      </span>
-                    )}
-                  </button>
-                ))}
-
-                <hr className="my-2" />
-
-                <Link
-                  to="/explore"
-                  className="btn btn-light text-start text-primary fw-semibold px-3 py-2 rounded-3 small"
-                >
-                  <i className="bi bi-compass me-2"></i>
-                  Explore Feed
-                </Link>
-
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="btn btn-outline-danger text-start px-3 py-2 rounded-3 mt-2 small"
-                >
-                  <i className="bi bi-box-arrow-right me-2"></i>
-                  Log Out
-                </button>
-              </nav>
-            </div>
-          </div>
+        <div className="dashboard-layout row g-4">
+          <DashboardSidebar
+            currentUser={currentUser}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            onLogout={handleLogout}
+            counts={{
+              posts: posts.length,
+              connections: totalConnectionsCount,
+              ideas: ideas.length,
+              notifications:
+                connectionNotifications.length +
+                (currentUser.congratulations?.length || 0),
+            }}
+          />
 
           {/* ================= MAIN CONTENT ================= */}
-          <div className="col-12 col-lg-9 col-xl-10">
-            {/* Top Welcome Hero */}
-            <div
-              className="p-4 rounded-4 text-white mb-4 position-relative overflow-hidden shadow-sm"
-              style={{
-                background: "linear-gradient(135deg, #0B5CFF 0%, #7038F5 100%)",
-              }}
-            >
-              <div className="row align-items-center">
-                <div className="col-md-8">
-                  <span className="badge bg-white text-primary rounded-pill px-3 py-1 fw-bold mb-2 small">
-                    Founder Workspace
-                  </span>
-                  <h2 className="fw-bold mb-1">
-                    Welcome back, {currentUser.name}! 👋
-                  </h2>
-                  <p className="opacity-90 small mb-0">
-                    {currentUser.hasProject === "yes"
-                      ? "Your venture is live and visible to builders within your proximity radius."
-                      : "Looking for exciting co-founder synergies and startup opportunities."}
-                  </p>
-                </div>
-                <div className="col-md-4 text-md-end mt-3 mt-md-0">
-                  <Link
-                    to="/explore"
-                    className="btn btn-light btn-sm rounded-pill fw-bold text-primary px-4 shadow-sm"
-                  >
-                    <i className="bi bi-search me-1"></i> Discover Founders
-                  </Link>
-                </div>
-              </div>
-            </div>
+          <div className="dashboard-main col-12 col-lg-9 col-xl-10">
+            <DashboardHero currentUser={currentUser} />
 
             {/* TAB: OVERVIEW */}
             {activeTab === "overview" && (
@@ -743,7 +597,7 @@ export default function Dashboard() {
                 {/* KPI Metrics */}
                 <div className="row g-3">
                   <div className="col-6 col-md-3">
-                    <div className="card foundmet-card border-0 shadow-sm p-3 text-center bg-white">
+                    <div className="card foundmet-card border-0 shadow-sm p-3 text-center bg-white h-100">
                       <div className="role-icon mx-auto mb-2 bg-primary-subtle text-primary">
                         <i className="bi bi-people-fill fs-5"></i>
                       </div>
@@ -753,7 +607,7 @@ export default function Dashboard() {
                   </div>
 
                   <div className="col-6 col-md-3">
-                    <div className="card foundmet-card border-0 shadow-sm p-3 text-center bg-white">
+                    <div className="card foundmet-card border-0 shadow-sm p-3 text-center bg-white h-100">
                       <div className="role-icon mx-auto mb-2 bg-success-subtle text-success">
                         <i className="bi bi-star-fill fs-5"></i>
                       </div>
@@ -763,7 +617,7 @@ export default function Dashboard() {
                   </div>
 
                   <div className="col-6 col-md-3">
-                    <div className="card foundmet-card border-0 shadow-sm p-3 text-center bg-white">
+                    <div className="card foundmet-card border-0 shadow-sm p-3 text-center bg-white h-100">
                       <div className="role-icon mx-auto mb-2 bg-info-subtle text-info">
                         <i className="bi bi-geo-alt-fill fs-5"></i>
                       </div>
@@ -775,7 +629,7 @@ export default function Dashboard() {
                   </div>
 
                   <div className="col-6 col-md-3">
-                    <div className="card foundmet-card border-0 shadow-sm p-3 text-center bg-white">
+                    <div className="card foundmet-card border-0 shadow-sm p-3 text-center bg-white h-100">
                       <div className="role-icon mx-auto mb-2 bg-warning-subtle text-warning">
                         <i className="bi bi-telephone-check-fill fs-5"></i>
                       </div>
@@ -828,7 +682,7 @@ export default function Dashboard() {
 
                 {/* Quick Active Connections Table */}
                 <div className="card foundmet-card border-0 shadow-sm p-4 bg-white">
-                  <div className="d-flex justify-content-between align-items-center mb-3">
+                  <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
                     <h5 className="fw-bold mb-0 text-main">
                       <i className="bi bi-people text-primary me-2"></i>
                       Connected Founders
@@ -979,7 +833,7 @@ export default function Dashboard() {
                       placeholder="What are you building?"
                       required
                     />
-                    <div className="d-flex justify-content-between align-items-center">
+                    <div className="d-flex flex-wrap justify-content-between align-items-center gap-2">
                       <small className="text-secondary">
                         {newPostText.length}/1000
                       </small>
@@ -1031,7 +885,7 @@ export default function Dashboard() {
                       >
                         {post.text}
                       </p>
-                      <div className="d-flex gap-2 mt-3">
+                      <div className="d-flex flex-wrap gap-2 mt-3">
                         <button
                           type="button"
                           className={`btn btn-sm ${post.liked ? "btn-primary" : "btn-outline-primary"} rounded-pill`}
@@ -1061,7 +915,7 @@ export default function Dashboard() {
             {/* TAB: CONNECTIONS */}
             {activeTab === "connections" && (
               <div className="card foundmet-card border-0 shadow-sm p-4 bg-white">
-                <div className="d-flex justify-content-between align-items-center mb-3">
+                <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
                   <div>
                     <h5 className="fw-bold mb-1 text-main">
                       Your Co-Founder Network
@@ -1124,7 +978,7 @@ export default function Dashboard() {
                           </p>
 
                           {/* Mobile Number Strip */}
-                          <div className="p-2 bg-white rounded border mb-3 d-flex align-items-center justify-content-between">
+                          <div className="p-2 bg-white rounded border mb-3 d-flex flex-wrap align-items-center justify-content-between gap-2">
                             <small className="text-secondary">
                               <i className="bi bi-telephone text-primary me-1"></i>
                               {isShared
@@ -1142,6 +996,7 @@ export default function Dashboard() {
                                 >
                                   WhatsApp
                                 </a>
+
                                 <a
                                   href={`tel:${founder.phoneNumber}`}
                                   className="btn btn-xs btn-outline-primary rounded-pill px-2"
@@ -1162,7 +1017,7 @@ export default function Dashboard() {
                             )}
                           </div>
 
-                          <div className="d-flex gap-2">
+                          <div className="d-flex flex-wrap gap-2">
                             <button
                               type="button"
                               onClick={() => openChatWith(founder)}
@@ -1206,7 +1061,6 @@ export default function Dashboard() {
                     <h5 className="fw-bold mb-1 text-main">Messages</h5>
                     <p className="small text-secondary mb-0">
                       Message accepted connections privately and secure
-                 
                     </p>
                   </div>
                   <span className="badge rounded-pill bg-primary-subtle text-primary">
@@ -1370,7 +1224,7 @@ export default function Dashboard() {
             {/* TAB: STARTUP IDEAS */}
             {activeTab === "ideas" && (
               <div className="card foundmet-card border-0 shadow-sm p-4 bg-white">
-                <div className="d-flex justify-content-between align-items-center mb-3">
+                <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
                   <div>
                     <h5 className="fw-bold mb-1 text-main">
                       Startup Ideas Backlog
@@ -1388,7 +1242,7 @@ export default function Dashboard() {
                 >
                   <h6 className="fw-bold small mb-2">+ Add New Concept</h6>
                   <div className="row g-2 mb-2">
-                    <div className="col-md-8">
+                    <div className="col-12 col-md-8">
                       <input
                         type="text"
                         className="form-control form-control-sm"
@@ -1397,7 +1251,7 @@ export default function Dashboard() {
                         onChange={(e) => setNewIdeaTitle(e.target.value)}
                       />
                     </div>
-                    <div className="col-md-4">
+                    <div className="col-12 col-md-4">
                       <select
                         className="form-select form-select-sm"
                         value={newIdeaCategory}
@@ -1433,10 +1287,10 @@ export default function Dashboard() {
                   {ideas.map((idea) => (
                     <div
                       key={idea.id}
-                      className="p-3 border rounded-3 d-flex justify-content-between align-items-start"
+                      className="p-3 border rounded-3 d-flex flex-wrap justify-content-between align-items-start gap-2"
                     >
                       <div>
-                        <div className="d-flex align-items-center gap-2 mb-1">
+                        <div className="d-flex flex-wrap align-items-center gap-2 mb-1">
                           <strong className="text-main small">
                             {idea.title}
                           </strong>
@@ -1527,8 +1381,9 @@ export default function Dashboard() {
                 </p>
 
                 <form onSubmit={handleSaveSettings}>
+                  {/* Row: Full Name + Email */}
                   <div className="row g-3 mb-3">
-                    <div className="col-md-6">
+                    <div className="col-12 col-md-6">
                       <label className="form-label small fw-bold text-secondary">
                         Full Name
                       </label>
@@ -1544,136 +1399,7 @@ export default function Dashboard() {
                         }
                       />
                     </div>
-                    <div className="row g-3 mb-3">
-                      <div className="col-md-4">
-                        <label className="form-label small fw-bold text-secondary">
-                          I am looking for
-                        </label>
-                        <select
-                          className="form-select"
-                          value={settingsForm.matchRole}
-                          onChange={(e) =>
-                            setSettingsForm({
-                              ...settingsForm,
-                              matchRole: e.target.value,
-                            })
-                          }
-                        >
-                          <option value="co-founder">Co-founder</option>
-                          <option value="builder">Someone to build with</option>
-                        </select>
-                      </div>
-                      <div className="col-md-4">
-                        <label className="form-label small fw-bold text-secondary">
-                          Build focus
-                        </label>
-                        <select
-                          className="form-select"
-                          value={settingsForm.buildType}
-                          onChange={(e) =>
-                            setSettingsForm({
-                              ...settingsForm,
-                              buildType: e.target.value,
-                            })
-                          }
-                        >
-                          <option value="startup">Startup</option>
-                          <option value="product">Product</option>
-                          <option value="business">Business</option>
-                          <option value="not-sure">Not sure yet</option>
-                        </select>
-                      </div>
-                      <div className="col-md-4">
-                        <label className="form-label small fw-bold text-secondary">
-                          Commitment
-                        </label>
-                        <select
-                          className="form-select"
-                          value={settingsForm.commitment}
-                          onChange={(e) =>
-                            setSettingsForm({
-                              ...settingsForm,
-                              commitment: e.target.value,
-                            })
-                          }
-                        >
-                          <option value="full-time">Full-time</option>
-                          <option value="part-time">Part-time</option>
-                          <option value="exploring">Exploring</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div className="mb-3">
-                      <label className="form-label small fw-bold text-secondary">
-                        What can you bring?
-                      </label>
-                      <div className="d-flex flex-wrap gap-2">
-                        {[
-                          "technology",
-                          "business",
-                          "design",
-                          "marketing",
-                          "product",
-                          "other",
-                        ].map((item) => (
-                          <button
-                            type="button"
-                            key={item}
-                            className={`btn btn-sm rounded-pill ${settingsForm.canBring.includes(item) ? "btn-primary" : "btn-outline-secondary"}`}
-                            onClick={() =>
-                              setSettingsForm({
-                                ...settingsForm,
-                                canBring: settingsForm.canBring.includes(item)
-                                  ? settingsForm.canBring.filter(
-                                      (value) => value !== item,
-                                    )
-                                  : [...settingsForm.canBring, item],
-                              })
-                            }
-                          >
-                            {item}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="row g-3 mb-3">
-                      <div className="col-md-8">
-                        <label className="form-label small fw-bold text-secondary">
-                          Project details
-                        </label>
-                        <textarea
-                          className="form-control"
-                          rows="2"
-                          value={settingsForm.projectDetails}
-                          onChange={(e) =>
-                            setSettingsForm({
-                              ...settingsForm,
-                              projectDetails: e.target.value,
-                            })
-                          }
-                        />
-                      </div>
-                      <div className="col-md-4">
-                        <label className="form-label small fw-bold text-secondary">
-                          Project stage
-                        </label>
-                        <select
-                          className="form-select"
-                          value={settingsForm.projectStatus}
-                          onChange={(e) =>
-                            setSettingsForm({
-                              ...settingsForm,
-                              projectStatus: e.target.value,
-                            })
-                          }
-                        >
-                          <option value="idea">Idea</option>
-                          <option value="development">Development</option>
-                          <option value="execution">Execution</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div className="col-md-6">
+                    <div className="col-12 col-md-6">
                       <label className="form-label small fw-bold text-secondary">
                         Email Address
                       </label>
@@ -1692,8 +1418,144 @@ export default function Dashboard() {
                     </div>
                   </div>
 
+                  {/* Row: Looking for / Build focus / Commitment */}
                   <div className="row g-3 mb-3">
-                    <div className="col-md-6">
+                    <div className="col-12 col-md-4">
+                      <label className="form-label small fw-bold text-secondary">
+                        I am looking for
+                      </label>
+                      <select
+                        className="form-select"
+                        value={settingsForm.matchRole}
+                        onChange={(e) =>
+                          setSettingsForm({
+                            ...settingsForm,
+                            matchRole: e.target.value,
+                          })
+                        }
+                      >
+                        <option value="co-founder">Co-founder</option>
+                        <option value="builder">Someone to build with</option>
+                      </select>
+                    </div>
+                    <div className="col-12 col-md-4">
+                      <label className="form-label small fw-bold text-secondary">
+                        Build focus
+                      </label>
+                      <select
+                        className="form-select"
+                        value={settingsForm.buildType}
+                        onChange={(e) =>
+                          setSettingsForm({
+                            ...settingsForm,
+                            buildType: e.target.value,
+                          })
+                        }
+                      >
+                        <option value="startup">Startup</option>
+                        <option value="product">Product</option>
+                        <option value="business">Business</option>
+                        <option value="not-sure">Not sure yet</option>
+                      </select>
+                    </div>
+                    <div className="col-12 col-md-4">
+                      <label className="form-label small fw-bold text-secondary">
+                        Commitment
+                      </label>
+                      <select
+                        className="form-select"
+                        value={settingsForm.commitment}
+                        onChange={(e) =>
+                          setSettingsForm({
+                            ...settingsForm,
+                            commitment: e.target.value,
+                          })
+                        }
+                      >
+                        <option value="full-time">Full-time</option>
+                        <option value="part-time">Part-time</option>
+                        <option value="exploring">Exploring</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* What can you bring */}
+                  <div className="mb-3">
+                    <label className="form-label small fw-bold text-secondary">
+                      What can you bring?
+                    </label>
+                    <div className="d-flex flex-wrap gap-2">
+                      {[
+                        "technology",
+                        "business",
+                        "design",
+                        "marketing",
+                        "product",
+                        "other",
+                      ].map((item) => (
+                        <button
+                          type="button"
+                          key={item}
+                          className={`btn btn-sm rounded-pill ${settingsForm.canBring.includes(item) ? "btn-primary" : "btn-outline-secondary"}`}
+                          onClick={() =>
+                            setSettingsForm({
+                              ...settingsForm,
+                              canBring: settingsForm.canBring.includes(item)
+                                ? settingsForm.canBring.filter(
+                                    (value) => value !== item,
+                                  )
+                                : [...settingsForm.canBring, item],
+                            })
+                          }
+                        >
+                          {item}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Row: Project details / Project stage */}
+                  <div className="row g-3 mb-3">
+                    <div className="col-12 col-md-8">
+                      <label className="form-label small fw-bold text-secondary">
+                        Project details
+                      </label>
+                      <textarea
+                        className="form-control"
+                        rows="2"
+                        value={settingsForm.projectDetails}
+                        onChange={(e) =>
+                          setSettingsForm({
+                            ...settingsForm,
+                            projectDetails: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="col-12 col-md-4">
+                      <label className="form-label small fw-bold text-secondary">
+                        Project stage
+                      </label>
+                      <select
+                        className="form-select"
+                        value={settingsForm.projectStatus}
+                        onChange={(e) =>
+                          setSettingsForm({
+                            ...settingsForm,
+                            projectStatus: e.target.value,
+                          })
+                        }
+                      >
+                        <option value="idea">Idea</option>
+                        <option value="development">Development</option>
+                        <option value="execution">Execution</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Row: Phone / Address */}
+                  <div className="row g-3 mb-3">
+                    <div className="col-12 col-md-6">
                       <label className="form-label small fw-bold text-secondary">
                         Mobile Phone Number
                       </label>
@@ -1716,7 +1578,7 @@ export default function Dashboard() {
                         Private until shared with connected founders.
                       </small>
                     </div>
-                    <div className="col-md-6">
+                    <div className="col-12 col-md-6">
                       <label className="form-label small fw-bold text-secondary">
                         City / Region (For 50-80 km search)
                       </label>

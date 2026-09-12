@@ -24,6 +24,27 @@ const STEP_KEYS = [
   "review",
 ];
 
+// Plain-language options for "who are you looking for" — no job titles,
+// just what the relationship actually looks like.
+const LOOKING_FOR_OPTIONS = [
+  {
+    key: "co-founder",
+    title: "A Co-Founder",
+    desc: "Someone to fully partner with you and share ownership of what you build",
+    icon: "bi-people-fill",
+  },
+  {
+    key: "project-helper",
+    title: "A Project Helper",
+    desc: "Someone to pitch in and help out, without taking on a full partner role",
+    icon: "bi-hand-thumbs-up-fill",
+  },
+];
+
+function lookingForLabel(key) {
+  return LOOKING_FOR_OPTIONS.find((opt) => opt.key === key)?.title || key;
+}
+
 function ChoiceStep({ title, options, value, multiple = false, onSelect }) {
   return (
     <div className="fade-in">
@@ -69,7 +90,7 @@ export default function Register() {
     canBring: [],
     buildType: "startup",
     commitment: "full-time",
-    lookingFor: [], // ["cto", "ceo", "cfo"]
+    lookingFor: [], // ["co-founder", "project-helper"]
     hasProject: "no", // "yes" | "no"
     projectStatus: "idea", // "idea" | "development" | "execution"
     projectDetails: "",
@@ -240,11 +261,11 @@ export default function Register() {
         setValidationError("Please specify your city or location.");
         return false;
       }
+    }
 
-      if (stepKey === "canBring" && formData.canBring.length === 0) {
-        setValidationError("Choose at least one strength.");
-        return false;
-      }
+    if (stepKey === "canBring" && formData.canBring.length === 0) {
+      setValidationError("Choose at least one strength.");
+      return false;
     }
 
     if (stepKey === "projectDetails" && formData.hasProject === "yes") {
@@ -445,12 +466,22 @@ export default function Register() {
 
   return (
     <div className="register-page min-vh-100 bg-background d-flex flex-column">
+      <style>{`
+        .register-progress-sticky{ top: 72px; }
+        @media (max-width: 576px){
+          .register-progress-sticky{ top: 60px; padding-top: 8px!important; padding-bottom: 8px!important; }
+          .question-wrapper{ padding: 24px 18px!important; border-radius: 18px!important; }
+          .question-wrapper h2.display-6{ font-size: 1.5rem!important; }
+          .step-nav-buttons{ flex-wrap: wrap; gap: 10px; }
+          .step-nav-buttons .btn{ flex: 1 1 auto; padding-left: 1rem!important; padding-right: 1rem!important; }
+        }
+      `}</style>
       <Header />
 
       {/* Progress & Breadcrumbs Header */}
       <div
-        className="w-100 bg-white border-bottom shadow-xs py-2 px-3 sticky-top"
-        style={{ top: "72px", zIndex: 100 }}
+        className="w-100 bg-white border-bottom shadow-xs py-2 px-3 sticky-top register-progress-sticky"
+        style={{ zIndex: 100 }}
       >
         <div className="container">
           <div className="d-flex align-items-center justify-content-between gap-3">
@@ -666,7 +697,7 @@ export default function Register() {
                     What is your role?
                   </h2>
                   <p className="text-secondary mb-4">
-                    Are you initiating your own venture, or ready to join as a
+                    Are you starting your own venture, or ready to join as a
                     co-founder?
                   </p>
 
@@ -692,7 +723,7 @@ export default function Register() {
                         </div>
                         <h4 className="fw-bold mb-1">Founder</h4>
                         <p className="text-secondary small mb-0">
-                          Starting and leading an ambitious new company
+                          Starting and leading a new company
                         </p>
                       </div>
                     </div>
@@ -721,7 +752,7 @@ export default function Register() {
                         </div>
                         <h4 className="fw-bold mb-1">Co-Founder</h4>
                         <p className="text-secondary small mb-0">
-                          Ready to team up and build vision into reality
+                          Ready to team up and help build someone's idea
                         </p>
                       </div>
                     </div>
@@ -823,31 +854,12 @@ export default function Register() {
                     Who are you looking for?
                   </h2>
                   <p className="text-secondary mb-4">
-                    Select the key leadership roles you want to find or recruit
-                    (multi-select):
+                    Choose what kind of person you're hoping to find. You can
+                    pick more than one.
                   </p>
 
                   <div className="d-flex flex-column gap-3 mb-4">
-                    {[
-                      {
-                        key: "cto",
-                        title: "Tech Lead / Developer/Full Stack Developer",
-                        desc: "Builds the software, web app, mobile app, or AI",
-                        icon: "bi-code-slash",
-                      },
-                      {
-                        key: "ceo",
-                        title: "Business & Growth Lead",
-                        desc: "Leads vision, marketing, sales, or partnerships",
-                        icon: "bi-briefcase",
-                      },
-                      {
-                        key: "cfo",
-                        title: "Finance & Operations Lead",
-                        desc: "Manages financial planning, legal, or scaling",
-                        icon: "bi-graph-up-arrow",
-                      },
-                    ].map((item) => {
+                    {LOOKING_FOR_OPTIONS.map((item) => {
                       const isSelected = formData.lookingFor.includes(item.key);
                       return (
                         <div
@@ -891,7 +903,8 @@ export default function Register() {
                     Do you have a project or idea?
                   </h2>
                   <p className="text-secondary mb-4">
-                    Whether it's an idea on paper or a live product, let us know!
+                    Whether it's an idea on paper or something you've already
+                    started, let us know!
                   </p>
 
                   <div className="row g-3 mb-4">
@@ -919,7 +932,7 @@ export default function Register() {
                         </div>
                         <h4 className="fw-bold mb-1">Yes, I have an idea/project</h4>
                         <p className="text-secondary small mb-0">
-                          Looking for co-founders to build and scale together
+                          Looking for co-founders to build and grow it together
                         </p>
                       </div>
                     </div>
@@ -945,7 +958,7 @@ export default function Register() {
                         </div>
                         <h4 className="fw-bold mb-1">No, exploring to join</h4>
                         <p className="text-secondary small mb-0">
-                          Ready to team up with an exciting early venture
+                          Ready to team up with an exciting early idea
                         </p>
                       </div>
                     </div>
@@ -974,13 +987,13 @@ export default function Register() {
                       {
                         key: "development",
                         label: "🛠️ In Development",
-                        desc: "Building the initial prototype or first MVP",
+                        desc: "Building the first version",
                         badge: "Building",
                       },
                       {
                         key: "execution",
                         label: "🚀 Live Product",
-                        desc: "Product is live or ready for users",
+                        desc: "It's live or ready for people to use",
                         badge: "Active",
                       },
                     ].map((item) => {
@@ -1030,7 +1043,7 @@ export default function Register() {
                     Describe your project
                   </h2>
                   <p className="text-secondary mb-4">
-                    What problem are you solving? Briefly pitch your vision to
+                    What problem are you solving? Briefly pitch your idea to
                     attract the right people.
                   </p>
 
@@ -1049,7 +1062,7 @@ export default function Register() {
                       rows={5}
                       value={formData.projectDetails}
                       onChange={handleChange}
-                      placeholder="e.g. Building a peer-to-peer cloud GPU network for indie AI developers, reducing inference costs by 70%..."
+                      placeholder="e.g. A local delivery app that connects small shop owners directly with nearby customers..."
                       className="form-control form-control-lg fs-5 p-3 border-2"
                       maxLength={300}
                     ></textarea>
@@ -1064,7 +1077,8 @@ export default function Register() {
                     Got a link to your project?
                   </h2>
                   <p className="text-secondary mb-4">
-                    Optional — add your landing page, GitHub repo, or demo.
+                    Optional — add a website, video, or anything people can
+                    look at.
                   </p>
 
                   <div className="mb-4">
@@ -1079,7 +1093,7 @@ export default function Register() {
                         value={formData.projectLink}
                         onChange={handleChange}
                         onKeyDown={handleKeyDown}
-                        placeholder="https://myproject.com or https://github.com/..."
+                        placeholder="https://myproject.com"
                         className="form-control form-control-lg fs-5 py-3 border-2 border-start-0 ps-0"
                       />
                     </div>
@@ -1227,9 +1241,9 @@ export default function Register() {
                             {formData.lookingFor.map((r) => (
                               <span
                                 key={r}
-                                className="badge bg-secondary-subtle text-dark text-uppercase"
+                                className="badge bg-secondary-subtle text-dark"
                               >
-                                {r}
+                                {lookingForLabel(r)}
                               </span>
                             ))}
                           </div>
@@ -1329,7 +1343,7 @@ export default function Register() {
               )}
 
               {/* Navigation Bar (Previous & Next/Submit) */}
-              <div className="d-flex justify-content-between align-items-center pt-3 border-top mt-2">
+              <div className="d-flex justify-content-between align-items-center pt-3 border-top mt-2 step-nav-buttons">
                 <button
                   type="button"
                   onClick={goPrev}
@@ -1442,7 +1456,7 @@ export default function Register() {
                 ) : (
                   <p className="founder-idea mt-3 text-muted fst-italic">
                     {formData.hasProject === "yes"
-                      ? "Add your startup description to preview it here..."
+                      ? "Add your project description to preview it here..."
                       : "Open to exploring exciting startup opportunities and joining early teams."}
                   </p>
                 )}
@@ -1468,7 +1482,7 @@ export default function Register() {
                     <div className="d-flex flex-wrap gap-2">
                       {formData.lookingFor.map((item) => (
                         <span className="skill-tag" key={item}>
-                          {item.toUpperCase()}
+                          {lookingForLabel(item)}
                         </span>
                       ))}
                     </div>
@@ -1535,17 +1549,17 @@ export default function Register() {
               <div className="modal-body p-4 small text-secondary">
                 <h6 className="fw-bold text-dark mb-1">1. 100% Idea & Code Ownership</h6>
                 <p>
-                  You retain full ownership of your ideas, intellectual property, and code. FoundMet takes 0 equity and 0 IP.
+                  You keep full ownership of your ideas and your work. FoundMet takes 0% equity and 0% ownership of anything you build.
                 </p>
 
                 <h6 className="fw-bold text-dark mb-1">2. Contact & Mobile Privacy</h6>
                 <p>
-                  Your phone number is strictly private. It is never displayed publicly and can only be shared with your explicit approval after mutual connection acceptance.
+                  Your phone number is strictly private. It is never shown publicly and can only be shared once you approve it, after both sides have connected.
                 </p>
 
                 <h6 className="fw-bold text-dark mb-1">3. Respectful Collaboration</h6>
                 <p>
-                  FoundMet is a community of builders. Spam, fraudulent pitches, or harassment will result in immediate account termination.
+                  FoundMet is a community of builders. Spam, fake pitches, or harassment will result in immediate account termination.
                 </p>
               </div>
               <div className="modal-footer border-top p-3 bg-light">

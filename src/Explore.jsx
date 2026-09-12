@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import Header from "./components/Header.jsx";
 import ChatWindow from "./components/ChatWindow.jsx";
@@ -20,6 +20,29 @@ import {
 
 const isMongoId = (value) => /^[a-f\d]{24}$/i.test(String(value));
 
+const TABS = [
+  { key: "all", label: "All Builders", icon: "bi-grid" },
+  { key: "founders", label: "Founders", icon: "bi-person-badge" },
+  { key: "co-founders", label: "Co-Founders", icon: "bi-people" },
+  { key: "has-project", label: "With Project", icon: "bi-rocket-takeoff" },
+  
+];
+
+const RADIUS_OPTIONS = [
+  { key: "all", label: "Any distance" },
+  { key: "10", label: "Within 10 km" },
+  { key: "25", label: "Within 25 km" },
+  { key: "50", label: "Within 50 km" },
+  { key: "100", label: "Within 100 km" },
+];
+
+const STAGE_OPTIONS = [
+  { key: "all", label: "Any stage" },
+  { key: "idea", label: "Idea stage" },
+  { key: "development", label: "In development" },
+  { key: "execution", label: "Live / execution" },
+];
+
 export default function Explore() {
   const [founders, setFounders] = useState([]);
   const [search, setSearch] = useState("");
@@ -33,6 +56,9 @@ export default function Explore() {
   const [reportReason, setReportReason] = useState("spam");
   const [reporting, setReporting] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
+
+  // Mobile filter drawer
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   // Stored connection statuses { [founderId]: 'pending' | 'connected' }
   const [connections, setConnections] = useState(() => {
@@ -97,6 +123,19 @@ export default function Explore() {
       Notification.requestPermission().catch(() => {});
     }
   }, []);
+
+  // Lock body scroll while the mobile filter drawer is open
+  useEffect(() => {
+    if (typeof document === "undefined") return undefined;
+    if (filtersOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [filtersOpen]);
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -354,7 +393,32 @@ export default function Explore() {
     showToast("Rating & endorsement submitted successfully!");
   };
 
-  // Filter logic (Search, Role, Stage, Proximity 50-80 km)
+  // Skill options derived from whatever the feed actually contains, so the
+  // filter never offers a choice with zero matching founders.
+  const skillOptions = useMemo(() => {
+    const set = new Set();
+    founders.forEach((founder) => {
+      (Array.isArray(founder.canBring) ? founder.canBring : []).forEach((skill) => set.add(skill));
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [founders]);
+
+  const activeFilterCount = [
+    stageFilter !== "all",
+    distanceFilter !== "all",
+    skillFilter !== "all",
+    activeTab !== "all",
+  ].filter(Boolean).length;
+
+  const resetFilters = () => {
+    setSearch("");
+    setActiveTab("all");
+    setStageFilter("all");
+    setDistanceFilter("all");
+    setSkillFilter("all");
+  };
+
+  // Filter logic (Search, Role, Stage, Proximity, Skill)
   const filteredFounders = founders.filter((founder) => {
     const q = search.toLowerCase().trim();
 
@@ -412,15 +476,71 @@ export default function Explore() {
   const visiblePage = Math.min(page, pageCount);
   const visibleFounders = sortedFounders.slice((visiblePage - 1) * pageSize, visiblePage * pageSize);
 
+  useEffect(() => {
+    setPage(1);
+  }, [search, activeTab, stageFilter, distanceFilter, skillFilter, sortByNearest]);
+
   return (
     <div className="explore-page min-vh-100 bg-background d-flex flex-column">
+      <style>{`
+        .explore-shell{display:flex;flex:1;min-height:0;position:relative;}
+        .explore-sidebar{width:280px;flex-shrink:0;background:#fff;border-right:1px solid #e8ecf3;
+          padding:20px 18px 28px;overflow-y:auto;}
+        .explore-sidebar::-webkit-scrollbar{width:6px;}
+        .explore-sidebar::-webkit-scrollbar-thumb{background:#dbe1ea;border-radius:8px;}
+        .explore-sidebar-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+        .explore-sidebar-close{display:none;}
+        .filter-block{margin-bottom:22px;}
+        .filter-block-label{font-size:11px;font-weight:700;letter-spacing:.02em;color:#6b7688;
+          text-transform:uppercase;margin-bottom:10px;display:block;}
+        .filter-tab-list{display:flex;flex-direction:column;gap:4px;}
+        .filter-tab-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;
+          border:1px solid transparent;background:transparent;color:#4a5468;font-size:13px;font-weight:600;
+          text-align:left;width:100%;transition:background .15s ease,color .15s ease;}
+        .filter-tab-item i{font-size:14px;width:16px;text-align:center;color:#95a0b3;}
+        .filter-tab-item:hover{background:#f4f6fa;}
+        .filter-tab-item.is-active{background:#0B5CFF14;color:#0B5CFF;border-color:#0B5CFF33;}
+        .filter-tab-item.is-active i{color:#0B5CFF;}
+        .radius-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+        .radius-chip{border:1px solid #e3e7ee;background:#fff;color:#4a5468;font-size:12px;font-weight:600;
+          border-radius:10px;padding:8px 6px;transition:all .15s ease;}
+        .radius-chip.is-active{background:#0f172a;color:#fff;border-color:#0f172a;}
+        .gps-toggle-btn{width:100%;justify-content:center;}
+        .sidebar-backdrop{position:fixed;inset:0;background:rgba(7,26,61,.45);z-index:1049;}
+        .explore-main{flex:1;min-width:0;display:flex;flex-direction:column;min-height:0;}
+        .explore-toolbar{padding:14px 24px;border-bottom:1px solid #e8ecf3;background:#fff;
+          position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+        .mobile-filter-btn{display:none;position:relative;}
+        .filter-count-dot{position:absolute;top:-4px;right:-4px;background:#0B5CFF;color:#fff;
+          font-size:10px;font-weight:700;border-radius:50%;width:16px;height:16px;
+          display:flex;align-items:center;justify-content:center;}
+        .explore-feed-scroll{flex:1;overflow-y:auto;padding:22px 24px 40px;}
+        .founders-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:18px;}
+        .founder-card{transition:transform .15s ease,box-shadow .15s ease;}
+        .founder-card:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(15,23,42,.08)!important;}
+        @media (max-width: 991.98px){
+          .explore-sidebar{position:fixed;top:0;left:0;height:100%;width:86%;max-width:320px;
+            transform:translateX(-105%);transition:transform .25s ease;z-index:1055;
+            box-shadow:8px 0 32px rgba(7,26,61,.18);}
+          .explore-sidebar.is-open{transform:translateX(0);}
+          .explore-sidebar-close{display:inline-flex;}
+          .mobile-filter-btn{display:inline-flex;}
+          .explore-feed-scroll{overflow-y:visible;padding:16px 14px 32px;}
+          .explore-shell{overflow:visible;}
+          .explore-toolbar{padding:12px 14px;}
+        }
+        @media (min-width: 992px){
+          .explore-shell{overflow:hidden;}
+        }
+      `}</style>
+
       <Header />
 
       {/* Floating Action Toast Notification */}
       {toastMessage && (
         <div
           className="position-fixed bottom-0 end-0 m-4 p-3 bg-dark text-white rounded-4 shadow-lg d-flex align-items-center gap-3 animate-fade-in"
-          style={{ zIndex: 1065 }}
+          style={{ zIndex: 1065, maxWidth: "calc(100vw - 32px)" }}
         >
           <i className="bi bi-check-circle-fill text-success fs-5"></i>
           <span className="small fw-semibold">{toastMessage}</span>
@@ -432,119 +552,112 @@ export default function Explore() {
         </div>
       )}
 
-      {/* Hero Banner */}
-      <section className="explore-hero text-center py-4 bg-white border-bottom">
-        <div className="container">
-          <div className="row justify-content-center">
-            <div className="col-lg-8">
-              <span className="badge bg-primary-subtle text-primary rounded-pill px-3 py-1 fw-bold mb-2">
-                <i className="bi bi-people-fill me-1"></i> Verified Founder Network
+      <div className="explore-shell">
+        {/* Sidebar: every filter lives here so the feed stays uncluttered */}
+        <aside className={`explore-sidebar ${filtersOpen ? "is-open" : ""}`} aria-label="Founder filters">
+          <div className="explore-sidebar-header">
+            <div>
+              <h6 className="fw-bold text-main mb-0">Discover</h6>
+              <span className="text-secondary" style={{ fontSize: "12px" }}>
+                {sortedFounders.length} founder{sortedFounders.length === 1 ? "" : "s"} match
               </span>
-              <h1 className="h2 fw-bold mt-1 text-main">
-                Discover Co-Founders & Startup Teams
-              </h1>
-              <p className="text-secondary small mb-0 mx-auto" style={{ maxWidth: "560px" }}>
-                Connect with engineers, operators, and product leaders. Chat in real-time once connected and safely request mobile numbers.
-              </p>
             </div>
+            <button
+              type="button"
+              className="btn btn-sm btn-light border rounded-circle explore-sidebar-close"
+              style={{ width: "32px", height: "32px" }}
+              onClick={() => setFiltersOpen(false)}
+              aria-label="Close filters"
+            >
+              <i className="bi bi-x-lg"></i>
+            </button>
           </div>
-        </div>
-      </section>
 
-      {/* Search & Filter Bar */}
-      <section className="explore-search py-3 bg-light border-bottom">
-        <div className="container">
-          <div className="row g-2 mb-3">
-            {/* Search Input */}
-            <div className="col-12 col-md-7">
-              <div className="input-group">
-                <span className="input-group-text bg-white border-end-0">
-                  <i className="bi bi-search text-secondary"></i>
-                </span>
-                <input
-                  type="text"
-                  className="form-control border-start-0"
-                  placeholder="Search by name, role, startup idea, or city..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-                {search && (
-                  <button
-                    type="button"
-                    className="btn btn-outline-secondary border-start-0"
-                    onClick={() => setSearch("")}
-                  >
-                    <i className="bi bi-x"></i>
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Stage Filter */}
-            <div className="col-12 col-md-5">
-              <select
-                className="form-select"
-                value={stageFilter}
-                onChange={(e) => setStageFilter(e.target.value)}
-              >
-                <option value="all">All Project Stages</option>
-                <option value="idea">Idea Stage</option>
-                <option value="development">In Development</option>
-                <option value="execution">Live / Execution</option>
-              </select>
+          {/* Search */}
+          <div className="filter-block">
+            <span className="filter-block-label">Search</span>
+            <div className="input-group input-group-sm">
+              <span className="input-group-text bg-white border-end-0">
+                <i className="bi bi-search text-secondary"></i>
+              </span>
+              <input
+                type="text"
+                className="form-control border-start-0"
+                placeholder="Name, role, idea, city..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              {search && (
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary border-start-0"
+                  onClick={() => setSearch("")}
+                >
+                  <i className="bi bi-x"></i>
+                </button>
+              )}
             </div>
           </div>
 
-          {/* Quick Filter Tabs & Distance Filters */}
-          <div className="d-flex flex-wrap gap-2 align-items-center justify-content-between mb-2">
-            {/* Role Filter Tabs */}
-            <div className="d-flex flex-wrap gap-1 align-items-center">
-              {[
-                { key: "all", label: "All Builders" },
-                { key: "founders", label: "Founders" },
-                { key: "co-founders", label: "Co-Founders" },
-                { key: "has-project", label: "With Project" },
-                { key: "looking-cto", label: "Needs CTO" },
-                { key: "looking-ceo", label: "Needs CEO" },
-              ].map((tab) => (
+          {/* Role / Tab Filter */}
+          <div className="filter-block">
+            <span className="filter-block-label">Looking to meet</span>
+            <div className="filter-tab-list">
+              {TABS.map((tab) => (
                 <button
                   key={tab.key}
                   type="button"
                   onClick={() => setActiveTab(tab.key)}
-                  className={`btn btn-sm rounded-pill px-3 py-1 ${
-                    activeTab === tab.key
-                      ? "btn-primary text-white fw-semibold"
-                      : "btn-light text-secondary border"
-                  }`}
-                  style={{ fontSize: "12px" }}
+                  className={`filter-tab-item ${activeTab === tab.key ? "is-active" : ""}`}
                 >
+                  <i className={`bi ${tab.icon}`}></i>
                   {tab.label}
                 </button>
               ))}
             </div>
+          </div>
 
-            {/* 50 - 80 KM Proximity Filter */}
-            <div className="d-flex align-items-center gap-1 bg-white p-1 rounded-pill border">
-              <span className="small text-secondary px-2 fw-semibold" style={{ fontSize: "11px" }}>
-                <i className="bi bi-geo-alt-fill text-danger me-1"></i> Radius:
-              </span>
-              {[
-                { key: "all", label: "All" },
-                { key: "10", label: "10 km" },
-                { key: "25", label: "25 km" },
-                { key: "50", label: "50 km" },
-                { key: "100", label: "100 km" },
-              ].map((d) => (
+          {/* Stage Filter */}
+          <div className="filter-block">
+            <span className="filter-block-label">Project stage</span>
+            <select
+              className="form-select form-select-sm"
+              value={stageFilter}
+              onChange={(e) => setStageFilter(e.target.value)}
+            >
+              {STAGE_OPTIONS.map((opt) => (
+                <option key={opt.key} value={opt.key}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Skill Filter */}
+          <div className="filter-block">
+            <span className="filter-block-label">Skill they bring</span>
+            <select
+              className="form-select form-select-sm"
+              value={skillFilter}
+              onChange={(e) => setSkillFilter(e.target.value)}
+            >
+              <option value="all">Any skill</option>
+              {skillOptions.map((skill) => (
+                <option key={skill} value={skill}>{skill}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Radius Filter */}
+          <div className="filter-block">
+            <span className="filter-block-label">
+              <i className="bi bi-geo-alt-fill text-danger me-1"></i> Distance
+            </span>
+            <div className="radius-grid">
+              {RADIUS_OPTIONS.map((d) => (
                 <button
                   key={d.key}
                   type="button"
                   onClick={() => setDistanceFilter(d.key)}
-                  className={`btn btn-xs rounded-pill px-2 py-1 ${
-                    distanceFilter === d.key
-                      ? "btn-dark text-white fw-bold shadow-xs"
-                      : "btn-light text-secondary"
-                  }`}
-                  style={{ fontSize: "11px" }}
+                  className={`radius-chip ${distanceFilter === d.key ? "is-active" : ""}`}
                 >
                   {d.label}
                 </button>
@@ -552,98 +665,107 @@ export default function Explore() {
             </div>
           </div>
 
-          {/* Live GPS Tracker Bar */}
-          <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 p-2 bg-white rounded-3 border shadow-xs">
-            <div className="d-flex align-items-center gap-2 flex-wrap">
-              <button
-                type="button"
-                onClick={handleToggleGPS}
-                disabled={gpsLoading}
-                className={`btn btn-sm rounded-pill px-3 py-1 d-inline-flex align-items-center gap-2 fw-semibold transition-all ${
-                  gpsActive
-                    ? "btn-success text-white shadow-xs"
-                    : "btn-outline-primary"
-                }`}
-                style={{ fontSize: "12px" }}
-              >
-                {gpsLoading ? (
-                  <>
-                    <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true" style={{ width: "12px", height: "12px" }}></span>
-                    <span>Acquiring GPS Signal...</span>
-                  </>
-                ) : gpsActive ? (
-                  <>
-                    <span className="badge bg-white text-success rounded-circle p-1 animate-radar-pulse"></span>
-                    <span>Live GPS Active (±{liveUserCoords.accuracy || 15}m)</span>
-                    <i className="bi bi-x-circle ms-1 opacity-75" title="Turn off GPS"></i>
-                  </>
-                ) : (
-                  <>
-                    <i className="bi bi-crosshair text-primary"></i>
-                    <span>📍 Locate Nearest Members via GPS</span>
-                  </>
-                )}
-              </button>
+          {/* GPS */}
+          <div className="filter-block">
+            <span className="filter-block-label">Location</span>
+            <button
+              type="button"
+              onClick={handleToggleGPS}
+              disabled={gpsLoading}
+              className={`btn btn-sm rounded-pill gps-toggle-btn d-flex align-items-center gap-2 fw-semibold ${
+                gpsActive ? "btn-success text-white" : "btn-outline-primary"
+              }`}
+            >
+              {gpsLoading ? (
+                <>
+                  <span className="spinner-border spinner-border-sm" style={{ width: "12px", height: "12px" }}></span>
+                  Acquiring signal...
+                </>
+              ) : gpsActive ? (
+                <>
+                  <span className="badge bg-white text-success rounded-circle p-1 animate-radar-pulse"></span>
+                  Live GPS on (±{liveUserCoords.accuracy || 15}m)
+                </>
+              ) : (
+                <>
+                  <i className="bi bi-crosshair"></i>
+                  Use my live location
+                </>
+              )}
+            </button>
+            <p className="text-secondary mb-0 mt-2" style={{ fontSize: "11px" }}>
+              {gpsActive ? (
+                <>Tracking from {liveUserCoords.lat.toFixed(3)}°, {liveUserCoords.lng.toFixed(3)}°</>
+              ) : (
+                <>Current hub: {currentUser?.address?.split(",")[0] || "Bangalore (default)"}</>
+              )}
+            </p>
+          </div>
 
-              <span className="small text-secondary" style={{ fontSize: "11px" }}>
-                {gpsActive ? (
-                  <span className="text-success fw-medium">
-                    <i className="bi bi-broadcast me-1"></i>
-                    Tracking live from {liveUserCoords.lat.toFixed(3)}°, {liveUserCoords.lng.toFixed(3)}°
-                  </span>
-                ) : (
-                  <span>
-                    <i className="bi bi-geo text-muted me-1"></i>
-                    Current hub: {currentUser?.address?.split(",")[0] || "Bangalore (Default)"}
-                  </span>
-                )}
+          {/* Sort */}
+          <div className="filter-block">
+            <span className="filter-block-label">Sort</span>
+            <button
+              type="button"
+              onClick={() => setSortByNearest(!sortByNearest)}
+              className={`btn btn-sm rounded-pill w-100 d-flex align-items-center justify-content-center gap-2 fw-semibold ${
+                sortByNearest ? "btn-dark text-white" : "btn-light text-secondary border"
+              }`}
+            >
+              <i className="bi bi-arrow-down-up"></i>
+              {sortByNearest ? "Nearest first" : "Newest first"}
+            </button>
+          </div>
+
+          {activeFilterCount > 0 && (
+            <button type="button" className="btn btn-link btn-sm text-secondary p-0" onClick={resetFilters}>
+              <i className="bi bi-arrow-counterclockwise me-1"></i> Reset all filters
+            </button>
+          )}
+        </aside>
+
+        {filtersOpen && (
+          <div className="sidebar-backdrop" onClick={() => setFiltersOpen(false)} />
+        )}
+
+        {/* Main feed */}
+        <main className="explore-main">
+          <div className="explore-toolbar">
+            <button
+              type="button"
+              className="btn btn-sm btn-light border rounded-pill mobile-filter-btn align-items-center gap-2"
+              onClick={() => setFiltersOpen(true)}
+            >
+              <span style={{ position: "relative" }}>
+                <i className="bi bi-sliders"></i>
+                {activeFilterCount > 0 && <span className="filter-count-dot">{activeFilterCount}</span>}
+              </span>
+              Filters
+            </button>
+
+            <div className="flex-grow-1">
+              <h1 className="h6 fw-bold text-main mb-0">Discover co-founders & startup teams</h1>
+              <span className="small text-secondary">
+                Showing {sortedFounders.length} founder{sortedFounders.length === 1 ? "" : "s"}
+                {distanceFilter !== "all" ? ` within ${distanceFilter} km` : ""}
+                {sortByNearest ? " · nearest first" : ""}
               </span>
             </div>
-
-            {/* Nearest First Sort Toggle */}
-            <div className="d-flex align-items-center gap-2 ms-auto">
-              <button
-                type="button"
-                onClick={() => setSortByNearest(!sortByNearest)}
-                className={`btn btn-sm rounded-pill px-3 py-1 ${
-                  sortByNearest
-                    ? "btn-dark text-white fw-bold shadow-xs"
-                    : "btn-light text-secondary border"
-                }`}
-                style={{ fontSize: "11px" }}
-              >
-                <i className="bi bi-arrow-down-up me-1"></i>
-                {sortByNearest ? "Nearest First ✓" : "Sort Nearest"}
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Main Feed Results */}
-      <section className="explore-results flex-grow-1 py-4">
-        <div className="container">
-          <div className="d-flex justify-content-between align-items-center mb-3">
-            <span className="small text-secondary fw-semibold">
-              Showing {sortedFounders.length} founders
-              {distanceFilter !== "all" ? ` within ${distanceFilter} km` : ""}
-              {sortByNearest ? " (Sorted by nearest distance)" : ""}
-            </span>
           </div>
 
-          {feedError && !loading && (
-            <div className="alert alert-warning d-flex justify-content-between align-items-center" role="alert">
-              <span>{feedError}</span>
-              <button type="button" className="btn btn-sm btn-outline-dark" onClick={() => window.location.reload()}>Retry</button>
-            </div>
-          )}
+          <div className="explore-feed-scroll">
+            {feedError && !loading && (
+              <div className="alert alert-warning d-flex justify-content-between align-items-center" role="alert">
+                <span>{feedError}</span>
+                <button type="button" className="btn btn-sm btn-outline-dark" onClick={() => window.location.reload()}>Retry</button>
+              </div>
+            )}
 
-          {/* Loading Skeletons */}
-          {loading && (
-            <div className="row g-4">
-              {[1, 2, 3, 4, 5, 6].map((n) => (
-                <div className="col-12 col-md-6 col-xl-4" key={n}>
-                  <div className="card border-0 shadow-sm p-4 rounded-4 bg-white">
+            {/* Loading Skeletons */}
+            {loading && (
+              <div className="founders-grid">
+                {[1, 2, 3, 4, 5, 6].map((n) => (
+                  <div className="card border-0 shadow-sm p-4 rounded-4 bg-white" key={n}>
                     <div className="d-flex gap-3 mb-3">
                       <div className="skeleton rounded-circle" style={{ width: "52px", height: "52px" }}></div>
                       <div className="flex-grow-1">
@@ -655,33 +777,33 @@ export default function Explore() {
                     <div className="skeleton mb-3" style={{ height: "12px", width: "80%" }}></div>
                     <div className="skeleton rounded-pill" style={{ height: "36px", width: "100%" }}></div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
 
-          {/* Founder Cards Grid */}
-          {!loading && sortedFounders.length > 0 && (
-            <div className="row g-4">
-              {visibleFounders.map((founder) => {
-                const status = normalizeConnectionStatus(connections[founder._id]);
-                const isConnected = status === "connected";
-                const isPending = status === "pending_sent" || status === "pending";
-                const isSelf = currentUser && currentUser._id === founder._id;
+            {/* Founder Cards Grid */}
+            {!loading && sortedFounders.length > 0 && (
+              <div className="founders-grid">
+                {visibleFounders.map((founder) => {
+                  const status = normalizeConnectionStatus(connections[founder._id]);
+                  const isConnected = status === "connected";
+                  const isPending = status === "pending_sent" || status === "pending";
+                  const isSelf = currentUser && currentUser._id === founder._id;
 
-                const distanceKm = founder.distanceKm ?? getDistanceToFounder(liveUserCoords, founder);
-                const rating = ratingsCache[founder._id] || { averageStars: 5.0, totalRatings: 1 };
+                  const distanceKm = founder.distanceKm ?? getDistanceToFounder(liveUserCoords, founder);
+                  const rating = ratingsCache[founder._id] || { averageStars: 5.0, totalRatings: 1 };
 
-                const lookingFor = Array.isArray(founder.lookingFor)
-                  ? founder.lookingFor
-                  : typeof founder.lookingFor === "string"
-                  ? [founder.lookingFor]
-                  : [];
+                  const lookingFor = Array.isArray(founder.lookingFor)
+                    ? founder.lookingFor
+                    : typeof founder.lookingFor === "string"
+                    ? [founder.lookingFor]
+                    : [];
 
-                return (
-                  <div className="col-12 col-md-6 col-xl-4" key={founder._id}>
-                    <div className="card foundmet-card border-0 shadow-sm rounded-4 p-3 h-100 d-flex flex-column bg-white">
-                      
+                  return (
+                    <div
+                      className="founder-card foundmet-card border-0 shadow-sm rounded-4 p-3 h-100 d-flex flex-column bg-white"
+                      key={founder._id}
+                    >
                       {/* Top Row: Avatar, Name, Role, Rating & Distance */}
                       <div className="d-flex align-items-center justify-content-between mb-2">
                         <div
@@ -803,45 +925,41 @@ export default function Explore() {
                         )}
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-          {!loading && pageCount > 1 && (
-            <nav className="d-flex justify-content-center align-items-center gap-2 mt-4" aria-label="Founder pages">
-              <button type="button" className="btn btn-outline-primary btn-sm rounded-pill" disabled={visiblePage === 1} onClick={() => setPage((value) => value - 1)}>Previous</button>
-              <span className="small text-secondary">Page {visiblePage} of {pageCount}</span>
-              <button type="button" className="btn btn-outline-primary btn-sm rounded-pill" disabled={visiblePage === pageCount} onClick={() => setPage((value) => value + 1)}>Next</button>
-            </nav>
-          )}
-
-          {/* Empty State */}
-          {!loading && sortedFounders.length === 0 && (
-            <div className="text-center py-5 bg-white rounded-4 border p-5">
-              <div className="rounded-circle bg-light d-inline-flex p-3 mb-3">
-                <i className="bi bi-geo-alt fs-1 text-secondary"></i>
+                  );
+                })}
               </div>
-              <h4 className="fw-bold">No founders found</h4>
-              <p className="text-secondary small mb-3">
-                Try widening your distance radius or clearing search filters.
-              </p>
-              <button
-                type="button"
-                onClick={() => {
-                  setSearch("");
-                  setActiveTab("all");
-                  setStageFilter("all");
-                  setDistanceFilter("all");
-                }}
-                className="btn btn-outline-primary rounded-pill px-4"
-              >
-                Reset Filters
-              </button>
-            </div>
-          )}
-        </div>
-      </section>
+            )}
+
+            {!loading && pageCount > 1 && (
+              <nav className="d-flex justify-content-center align-items-center gap-2 mt-4" aria-label="Founder pages">
+                <button type="button" className="btn btn-outline-primary btn-sm rounded-pill" disabled={visiblePage === 1} onClick={() => setPage((value) => value - 1)}>Previous</button>
+                <span className="small text-secondary">Page {visiblePage} of {pageCount}</span>
+                <button type="button" className="btn btn-outline-primary btn-sm rounded-pill" disabled={visiblePage === pageCount} onClick={() => setPage((value) => value + 1)}>Next</button>
+              </nav>
+            )}
+
+            {/* Empty State */}
+            {!loading && sortedFounders.length === 0 && (
+              <div className="text-center py-5 bg-white rounded-4 border p-5">
+                <div className="rounded-circle bg-light d-inline-flex p-3 mb-3">
+                  <i className="bi bi-geo-alt fs-1 text-secondary"></i>
+                </div>
+                <h4 className="fw-bold">No founders found</h4>
+                <p className="text-secondary small mb-3">
+                  Try widening your distance radius or clearing search filters.
+                </p>
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="btn btn-outline-primary rounded-pill px-4"
+                >
+                  Reset Filters
+                </button>
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
 
       {/* Founder Full Profile Modal & Contact Share */}
       {selectedFounder && (

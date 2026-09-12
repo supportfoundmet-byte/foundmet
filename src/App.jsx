@@ -9,7 +9,7 @@ import Terms from "./Terms.jsx";
 import Privacy from "./Privacy.jsx";
 import Cookies from "./Cookies.jsx";
 import CookieBanner from "./components/CookieBanner.jsx";
-import Chatbot from "./components/Chatbot.jsx";
+
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import ErrorPage from "./ErrorPage.jsx";
 import Admin from "./Admin.jsx";
@@ -76,7 +76,7 @@ export default function App() {
           <Route path="*" element={<ErrorPage />} />
         </Routes>
 
-        {!isAdmin && <Chatbot />}
+        {!isAdmin}
         <CookieBanner />
       </div>
     </ErrorBoundary>
