@@ -136,6 +136,15 @@ export default function DashboardSidebar({
           <hr className="my-2" />
 
           <Link
+            to="/my-posts"
+            onClick={() => setMobileOpen(false)}
+            className="btn btn-light text-start text-primary fw-semibold px-3 py-2 rounded-3 small"
+          >
+            <i className="bi bi-person-lines-fill me-2"></i>
+            My Posts
+          </Link>
+
+          <Link
             to="/explore"
             onClick={() => setMobileOpen(false)}
             className="btn btn-light text-start text-primary fw-semibold px-3 py-2 rounded-3 small"

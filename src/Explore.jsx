@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import Header from "./components/Header.jsx";
 import ChatWindow from "./components/ChatWindow.jsx";
-import RatingModal from "./components/RatingModal.jsx";
 import {
   getCoordinatesFromAddress,
   getDistanceToFounder,
@@ -44,8 +43,25 @@ const STAGE_OPTIONS = [
 
 const STAGE_META = {
   idea: { label: "Idea stage", icon: "bi-lightbulb", className: "stage-idea" },
-  development: { label: "In development", icon: "bi-code-slash", className: "stage-development" },
-  execution: { label: "Live / execution", icon: "bi-rocket-takeoff-fill", className: "stage-execution" },
+  development: {
+    label: "In development",
+    icon: "bi-code-slash",
+    className: "stage-development",
+  },
+  execution: {
+    label: "Live / execution",
+    icon: "bi-rocket-takeoff-fill",
+    className: "stage-execution",
+  },
+};
+
+// Formats a createdAt/joinedAt value into "Jan 2024" style text.
+// Returns null when there's nothing usable to format.
+const formatMemberSince = (dateValue) => {
+  if (!dateValue) return null;
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleDateString("en-US", { month: "short", year: "numeric" });
 };
 
 export default function Explore() {
@@ -99,22 +115,18 @@ export default function Explore() {
   const [connectionNote, setConnectionNote] = useState("");
   const [connectionSending, setConnectionSending] = useState(false);
 
-  // Rating state
-  const [ratingFounder, setRatingFounder] = useState(null);
-  const [ratingsCache, setRatingsCache] = useState({
-    seed_1: { averageStars: 4.9, totalRatings: 8, tags: ["Strong Execution", "Visionary Leader"] },
-    seed_2: { averageStars: 4.8, totalRatings: 5, tags: ["Product Sense", "Great Communicator"] },
-    seed_3: { averageStars: 5.0, totalRatings: 11, tags: ["Technical Wizard", "Resilient & Gritty"] },
-    seed_4: { averageStars: 4.7, totalRatings: 4, tags: ["Growth Hacker", "High Integrity"] },
-  });
-
   // Socket.IO Chat window state
   const [chatContact, setChatContact] = useState(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
 
-  // Dynamic user location & GPS Tracker state
+  // Dynamic user location & GPS Tracker state — derived strictly from the
+  // address stored on the user's own DB record. No hardcoded city fallback:
+  // if they haven't set an address yet, we simply have no coordinates
+  // (distance badges/sorting are skipped rather than faked).
   const [liveUserCoords, setLiveUserCoords] = useState(() => {
-    return getCoordinatesFromAddress(currentUser?.address || "Bangalore, India");
+    return currentUser?.address
+      ? getCoordinatesFromAddress(currentUser.address)
+      : null;
   });
   const [gpsActive, setGpsActive] = useState(false);
   const [gpsLoading, setGpsLoading] = useState(false);
@@ -124,7 +136,11 @@ export default function Explore() {
   const seenConnectionNotifications = useRef(new Set());
 
   useEffect(() => {
-    if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
+    if (
+      typeof window !== "undefined" &&
+      "Notification" in window &&
+      Notification.permission === "default"
+    ) {
       Notification.requestPermission().catch(() => {});
     }
   }, []);
@@ -152,7 +168,11 @@ export default function Explore() {
   // Toggle GPS Tracker to lock exact real-time coordinates
   const handleToggleGPS = async () => {
     if (gpsActive) {
-      setLiveUserCoords(getCoordinatesFromAddress(currentUser?.address || "Bangalore, India"));
+      setLiveUserCoords(
+        currentUser?.address
+          ? getCoordinatesFromAddress(currentUser.address)
+          : null,
+      );
       setGpsActive(false);
       setSortByNearest(false);
       showToast("📍 Live GPS deactivated. Using default city coordinates.");
@@ -186,7 +206,9 @@ export default function Explore() {
     }
 
     if (normalizeConnectionStatus(connections[founder._id]) !== "connected") {
-      showToast(`You can chat once ${founder.name} accepts your connection request.`);
+      showToast(
+        `You can chat once ${founder.name} accepts your connection request.`,
+      );
       return;
     }
 
@@ -207,7 +229,8 @@ export default function Explore() {
             search: search.trim() || undefined,
             lat: liveUserCoords?.lat,
             lng: liveUserCoords?.lng,
-            radiusKm: distanceFilter === "all" ? undefined : Number(distanceFilter),
+            radiusKm:
+              distanceFilter === "all" ? undefined : Number(distanceFilter),
             skill: skillFilter === "all" ? undefined : skillFilter,
             stage: stageFilter === "all" ? undefined : stageFilter,
           },
@@ -215,7 +238,11 @@ export default function Explore() {
         });
 
         if (response.data?.users && response.data.users.length > 0) {
-          setFounders(response.data.users.filter((founder) => String(founder._id) !== String(currentUser?._id)));
+          setFounders(
+            response.data.users.filter(
+              (founder) => String(founder._id) !== String(currentUser?._id),
+            ),
+          );
         } else setFounders([]);
       } catch (err) {
         console.warn("Backend feed unavailable:", err.message);
@@ -227,7 +254,14 @@ export default function Explore() {
     };
 
     fetchFounders();
-  }, [search, distanceFilter, skillFilter, stageFilter, liveUserCoords?.lat, liveUserCoords?.lng]);
+  }, [
+    search,
+    distanceFilter,
+    skillFilter,
+    stageFilter,
+    liveUserCoords?.lat,
+    liveUserCoords?.lng,
+  ]);
 
   useEffect(() => {
     if (!currentUser?._id) return undefined;
@@ -235,17 +269,27 @@ export default function Explore() {
     let active = true;
     const syncConnections = async (notify = false) => {
       try {
-        const { data } = await api.get("/api/v1/connections", { timeout: 8000 });
+        const { data } = await api.get("/api/v1/connections", {
+          timeout: 8000,
+        });
         if (!active || !data?.success) return;
 
         const nextStatuses = statusesFromPayload(data, currentUser._id);
         setConnections(nextStatuses);
-        localStorage.setItem("foundmet_connections", JSON.stringify(nextStatuses));
+        localStorage.setItem(
+          "foundmet_connections",
+          JSON.stringify(nextStatuses),
+        );
         if (notify) {
           (data.receivedRequests || []).forEach((connection) => {
-            if (!seenConnectionNotifications.current.has(String(connection._id))) {
+            if (
+              !seenConnectionNotifications.current.has(String(connection._id))
+            ) {
               seenConnectionNotifications.current.add(String(connection._id));
-              notifyBrowser("New connection request", `${connection.fromUser?.name || "A founder"} wants to connect with you.`);
+              notifyBrowser(
+                "New connection request",
+                `${connection.fromUser?.name || "A founder"} wants to connect with you.`,
+              );
             }
           });
         }
@@ -281,7 +325,9 @@ export default function Explore() {
       return;
     }
     if (currentStatus === "pending_received") {
-      showToast("This founder already requested you. Open Dashboard to accept.");
+      showToast(
+        "This founder already requested you. Open Dashboard to accept.",
+      );
       return;
     }
     if (currentStatus === "blocked") {
@@ -289,14 +335,19 @@ export default function Explore() {
       return;
     }
     if (!isMongoId(founder._id)) {
-      showToast("Only verified founder profiles can receive connection requests.");
+      showToast(
+        "Only verified founder profiles can receive connection requests.",
+      );
       return;
     }
     setConnectionSending(true);
     try {
-      const { data } = await api.post(`/api/v1/connections/request/${founder._id}`, {
-        message: connectionNote.trim().slice(0, 500),
-      });
+      const { data } = await api.post(
+        `/api/v1/connections/request/${founder._id}`,
+        {
+          message: connectionNote.trim().slice(0, 500),
+        },
+      );
       const nextStatus =
         data.state === "CONNECTED" || data.connection?.status === "accepted"
           ? "connected"
@@ -308,7 +359,10 @@ export default function Explore() {
       localStorage.setItem("foundmet_connections", JSON.stringify(updated));
       setConnectionNote("");
       showToast(data.message || `Connection request sent to ${founder.name}.`);
-      notifyBrowser("Connection request sent", `Your request to ${founder.name} is pending.`);
+      notifyBrowser(
+        "Connection request sent",
+        `Your request to ${founder.name} is pending.`,
+      );
     } catch (error) {
       if (error.response?.status === 401) {
         localStorage.removeItem("foundmet_user");
@@ -317,7 +371,11 @@ export default function Explore() {
       } else if (error.response?.status === 429) {
         showToast("You have sent too many requests. Please try again shortly.");
       } else {
-        showToast(error.response?.data?.message || error.userMessage || "Unable to send connection request. Please try again.");
+        showToast(
+          error.response?.data?.message ||
+            error.userMessage ||
+            "Unable to send connection request. Please try again.",
+        );
       }
     } finally {
       setConnectionSending(false);
@@ -331,14 +389,21 @@ export default function Explore() {
     }
     setReporting(true);
     try {
-      const { data } = await api.post(`/api/v1/reports/${selectedFounder._id}`, {
-        reason: reportReason,
-      });
-      setFounders((previous) => previous.filter((founder) => founder._id !== selectedFounder._id));
+      const { data } = await api.post(
+        `/api/v1/reports/${selectedFounder._id}`,
+        {
+          reason: reportReason,
+        },
+      );
+      setFounders((previous) =>
+        previous.filter((founder) => founder._id !== selectedFounder._id),
+      );
       setSelectedFounder(null);
       showToast(data.message || "Profile hidden and submitted for review.");
     } catch (error) {
-      showToast(error.response?.data?.message || "Could not submit this report.");
+      showToast(
+        error.response?.data?.message || "Could not submit this report.",
+      );
     } finally {
       setReporting(false);
     }
@@ -352,7 +417,9 @@ export default function Explore() {
     }
 
     if (normalizeConnectionStatus(connections[founder._id]) !== "connected") {
-      showToast("Connect with this founder first before requesting their mobile number.");
+      showToast(
+        "Connect with this founder first before requesting their mobile number.",
+      );
       return;
     }
 
@@ -360,7 +427,9 @@ export default function Explore() {
     // Instant approval for seed founders
     if (founder._id.startsWith("seed_") || founder._id.startsWith("demo_")) {
       updated[founder._id] = true;
-      showToast(`${founder.name} approved your request! Mobile number is now visible.`);
+      showToast(
+        `${founder.name} approved your request! Mobile number is now visible.`,
+      );
     } else {
       showToast(`Mobile number request sent to ${founder.name}!`);
     }
@@ -378,32 +447,14 @@ export default function Explore() {
     showToast(`Shared your mobile number with ${founder.name}!`);
   };
 
-  // Handle Rating Submitted
-  const handleRatingSubmitted = ({ founderId, stars, feedback, tags }) => {
-    setRatingsCache((prev) => {
-      const existing = prev[founderId] || { averageStars: 5.0, totalRatings: 0, tags: [] };
-      const newTotal = existing.totalRatings + 1;
-      const newAvg = Number(((existing.averageStars * existing.totalRatings + stars) / newTotal).toFixed(1));
-      const mergedTags = Array.from(new Set([...(existing.tags || []), ...(tags || [])]));
-      return {
-        ...prev,
-        [founderId]: {
-          averageStars: newAvg,
-          totalRatings: newTotal,
-          tags: mergedTags,
-          latestFeedback: feedback,
-        },
-      };
-    });
-    showToast("Rating & endorsement submitted successfully!");
-  };
-
   // Skill options derived from whatever the feed actually contains, so the
   // filter never offers a choice with zero matching founders.
   const skillOptions = useMemo(() => {
     const set = new Set();
     founders.forEach((founder) => {
-      (Array.isArray(founder.canBring) ? founder.canBring : []).forEach((skill) => set.add(skill));
+      (Array.isArray(founder.canBring) ? founder.canBring : []).forEach(
+        (skill) => set.add(skill),
+      );
     });
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [founders]);
@@ -455,31 +506,57 @@ export default function Explore() {
       matchesStage = founder.projectStatus?.toLowerCase() === stageFilter;
     }
 
-    // Distance calculation
-    const dist = founder.distanceKm ?? getDistanceToFounder(liveUserCoords, founder);
+    // Distance calculation — only computed once we actually have coordinates
+    const dist =
+      founder.distanceKm ??
+      (liveUserCoords ? getDistanceToFounder(liveUserCoords, founder) : null);
     const radius = Number(distanceFilter);
-    const matchesDistance = distanceFilter === "all" || (Number.isFinite(dist) && dist <= radius);
-    const matchesSkill = skillFilter === "all" || (Array.isArray(founder.canBring) && founder.canBring.includes(skillFilter));
+    const matchesDistance =
+      distanceFilter === "all" || (Number.isFinite(dist) && dist <= radius);
+    const matchesSkill =
+      skillFilter === "all" ||
+      (Array.isArray(founder.canBring) &&
+        founder.canBring.includes(skillFilter));
 
-    return matchesSearch && matchesTab && matchesStage && matchesDistance && matchesSkill;
+    return (
+      matchesSearch &&
+      matchesTab &&
+      matchesStage &&
+      matchesDistance &&
+      matchesSkill
+    );
   });
 
   // Sort by distance (nearest first) if requested
   const sortedFounders = [...filteredFounders].sort((a, b) => {
     if (sortByNearest) {
-      const distA = getDistanceToFounder(liveUserCoords, a) ?? 99999;
-      const distB = getDistanceToFounder(liveUserCoords, b) ?? 99999;
+      const distA = liveUserCoords
+        ? (getDistanceToFounder(liveUserCoords, a) ?? 99999)
+        : 99999;
+      const distB = liveUserCoords
+        ? (getDistanceToFounder(liveUserCoords, b) ?? 99999)
+        : 99999;
       return distA - distB;
     }
     return 0;
   });
   const pageCount = Math.max(1, Math.ceil(sortedFounders.length / pageSize));
   const visiblePage = Math.min(page, pageCount);
-  const visibleFounders = sortedFounders.slice((visiblePage - 1) * pageSize, visiblePage * pageSize);
+  const visibleFounders = sortedFounders.slice(
+    (visiblePage - 1) * pageSize,
+    visiblePage * pageSize,
+  );
 
   useEffect(() => {
     setPage(1);
-  }, [search, activeTab, stageFilter, distanceFilter, skillFilter, sortByNearest]);
+  }, [
+    search,
+    activeTab,
+    stageFilter,
+    distanceFilter,
+    skillFilter,
+    sortByNearest,
+  ]);
 
   return (
     <div className="explore-page min-vh-100 bg-background d-flex flex-column">
@@ -578,12 +655,16 @@ export default function Explore() {
 
       <div className="explore-shell">
         {/* Sidebar: every filter lives here so the feed stays uncluttered */}
-        <aside className={`explore-sidebar ${filtersOpen ? "is-open" : ""}`} aria-label="Founder filters">
+        <aside
+          className={`explore-sidebar ${filtersOpen ? "is-open" : ""}`}
+          aria-label="Founder filters"
+        >
           <div className="explore-sidebar-header">
             <div>
               <h6 className="fw-bold text-main mb-0">Discover</h6>
               <span className="text-secondary" style={{ fontSize: "12px" }}>
-                {sortedFounders.length} founder{sortedFounders.length === 1 ? "" : "s"} match
+                {sortedFounders.length} founder
+                {sortedFounders.length === 1 ? "" : "s"} match
               </span>
             </div>
             <button
@@ -650,7 +731,9 @@ export default function Explore() {
               onChange={(e) => setStageFilter(e.target.value)}
             >
               {STAGE_OPTIONS.map((opt) => (
-                <option key={opt.key} value={opt.key}>{opt.label}</option>
+                <option key={opt.key} value={opt.key}>
+                  {opt.label}
+                </option>
               ))}
             </select>
           </div>
@@ -665,7 +748,9 @@ export default function Explore() {
             >
               <option value="all">Any skill</option>
               {skillOptions.map((skill) => (
-                <option key={skill} value={skill}>{skill}</option>
+                <option key={skill} value={skill}>
+                  {skill}
+                </option>
               ))}
             </select>
           </div>
@@ -702,7 +787,10 @@ export default function Explore() {
             >
               {gpsLoading ? (
                 <>
-                  <span className="spinner-border spinner-border-sm" style={{ width: "12px", height: "12px" }}></span>
+                  <span
+                    className="spinner-border spinner-border-sm"
+                    style={{ width: "12px", height: "12px" }}
+                  ></span>
                   Acquiring signal...
                 </>
               ) : gpsActive ? (
@@ -717,11 +805,17 @@ export default function Explore() {
                 </>
               )}
             </button>
-            <p className="text-secondary mb-0 mt-2" style={{ fontSize: "11px" }}>
+            <p
+              className="text-secondary mb-0 mt-2"
+              style={{ fontSize: "11px" }}
+            >
               {gpsActive ? (
-                <>Tracking from {liveUserCoords.lat.toFixed(3)}°, {liveUserCoords.lng.toFixed(3)}°</>
+                <>
+                  Tracking from {liveUserCoords.lat.toFixed(3)}°,{" "}
+                  {liveUserCoords.lng.toFixed(3)}°
+                </>
               ) : (
-                <>Current hub: {currentUser?.address?.split(",")[0] || "Bangalore (default)"}</>
+                <>Current hub: {currentUser?.address || "Address not set"}</>
               )}
             </p>
           </div>
@@ -733,7 +827,9 @@ export default function Explore() {
               type="button"
               onClick={() => setSortByNearest(!sortByNearest)}
               className={`btn btn-sm rounded-pill w-100 d-flex align-items-center justify-content-center gap-2 fw-semibold ${
-                sortByNearest ? "btn-dark text-white" : "btn-light text-secondary border"
+                sortByNearest
+                  ? "btn-dark text-white"
+                  : "btn-light text-secondary border"
               }`}
             >
               <i className="bi bi-arrow-down-up"></i>
@@ -742,14 +838,22 @@ export default function Explore() {
           </div>
 
           {activeFilterCount > 0 && (
-            <button type="button" className="btn btn-link btn-sm text-secondary p-0" onClick={resetFilters}>
-              <i className="bi bi-arrow-counterclockwise me-1"></i> Reset all filters
+            <button
+              type="button"
+              className="btn btn-link btn-sm text-secondary p-0"
+              onClick={resetFilters}
+            >
+              <i className="bi bi-arrow-counterclockwise me-1"></i> Reset all
+              filters
             </button>
           )}
         </aside>
 
         {filtersOpen && (
-          <div className="sidebar-backdrop" onClick={() => setFiltersOpen(false)} />
+          <div
+            className="sidebar-backdrop"
+            onClick={() => setFiltersOpen(false)}
+          />
         )}
 
         {/* Main feed */}
@@ -762,15 +866,20 @@ export default function Explore() {
             >
               <span style={{ position: "relative" }}>
                 <i className="bi bi-sliders"></i>
-                {activeFilterCount > 0 && <span className="filter-count-dot">{activeFilterCount}</span>}
+                {activeFilterCount > 0 && (
+                  <span className="filter-count-dot">{activeFilterCount}</span>
+                )}
               </span>
               Filters
             </button>
 
             <div className="flex-grow-1">
-              <h1 className="h6 fw-bold text-main mb-0">Discover co-founders & startup teams</h1>
+              <h1 className="h6 fw-bold text-main mb-0">
+                Discover co-founders & startup teams
+              </h1>
               <span className="small text-secondary">
-                Showing {sortedFounders.length} founder{sortedFounders.length === 1 ? "" : "s"}
+                Showing {sortedFounders.length} founder
+                {sortedFounders.length === 1 ? "" : "s"}
                 {distanceFilter !== "all" ? ` within ${distanceFilter} km` : ""}
                 {sortByNearest ? " · nearest first" : ""}
               </span>
@@ -779,9 +888,18 @@ export default function Explore() {
 
           <div className="explore-feed-scroll">
             {feedError && !loading && (
-              <div className="alert alert-warning d-flex justify-content-between align-items-center" role="alert">
+              <div
+                className="alert alert-warning d-flex justify-content-between align-items-center"
+                role="alert"
+              >
                 <span>{feedError}</span>
-                <button type="button" className="btn btn-sm btn-outline-dark" onClick={() => window.location.reload()}>Retry</button>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-dark"
+                  onClick={() => window.location.reload()}
+                >
+                  Retry
+                </button>
               </div>
             )}
 
@@ -789,17 +907,38 @@ export default function Explore() {
             {loading && (
               <div className="founders-grid">
                 {[1, 2, 3, 4, 5, 6].map((n) => (
-                  <div className="card border-0 shadow-sm p-4 rounded-4 bg-white" key={n}>
+                  <div
+                    className="card border-0 shadow-sm p-4 rounded-4 bg-white"
+                    key={n}
+                  >
                     <div className="d-flex gap-3 mb-3">
-                      <div className="skeleton rounded-circle" style={{ width: "52px", height: "52px" }}></div>
+                      <div
+                        className="skeleton rounded-circle"
+                        style={{ width: "52px", height: "52px" }}
+                      ></div>
                       <div className="flex-grow-1">
-                        <div className="skeleton mb-2" style={{ height: "16px", width: "60%" }}></div>
-                        <div className="skeleton" style={{ height: "12px", width: "40%" }}></div>
+                        <div
+                          className="skeleton mb-2"
+                          style={{ height: "16px", width: "60%" }}
+                        ></div>
+                        <div
+                          className="skeleton"
+                          style={{ height: "12px", width: "40%" }}
+                        ></div>
                       </div>
                     </div>
-                    <div className="skeleton mb-2" style={{ height: "12px", width: "100%" }}></div>
-                    <div className="skeleton mb-3" style={{ height: "12px", width: "80%" }}></div>
-                    <div className="skeleton rounded-pill" style={{ height: "36px", width: "100%" }}></div>
+                    <div
+                      className="skeleton mb-2"
+                      style={{ height: "12px", width: "100%" }}
+                    ></div>
+                    <div
+                      className="skeleton mb-3"
+                      style={{ height: "12px", width: "80%" }}
+                    ></div>
+                    <div
+                      className="skeleton rounded-pill"
+                      style={{ height: "36px", width: "100%" }}
+                    ></div>
                   </div>
                 ))}
               </div>
@@ -809,16 +948,32 @@ export default function Explore() {
             {!loading && sortedFounders.length > 0 && (
               <div className="founders-grid">
                 {visibleFounders.map((founder) => {
-                  const status = normalizeConnectionStatus(connections[founder._id]);
+                  const status = normalizeConnectionStatus(
+                    connections[founder._id],
+                  );
                   const isConnected = status === "connected";
-                  const isPending = status === "pending_sent" || status === "pending";
+                  const isPending =
+                    status === "pending_sent" || status === "pending";
                   const isSelf = currentUser && currentUser._id === founder._id;
 
-                  const distanceKm = founder.distanceKm ?? getDistanceToFounder(liveUserCoords, founder);
-                  const rating = ratingsCache[founder._id] || { averageStars: 5.0, totalRatings: 1, tags: [] };
-                  const topEndorsements = (rating.tags || []).slice(0, 2);
-                  const topSkills = (Array.isArray(founder.canBring) ? founder.canBring : []).slice(0, 2);
-                  const stageMeta = STAGE_META[founder.projectStatus?.toLowerCase()] || null;
+                  const distanceKm =
+                    founder.distanceKm ??
+                    (liveUserCoords
+                      ? getDistanceToFounder(liveUserCoords, founder)
+                      : null);
+                  const memberSince = formatMemberSince(
+                    founder.createdAt || founder.joinedAt,
+                  );
+                  const aboutText =
+                    founder.aboutMe ||
+                    founder.interestingFact ||
+                    founder.bio ||
+                    null;
+                  const topSkills = (
+                    Array.isArray(founder.canBring) ? founder.canBring : []
+                  ).slice(0, 2);
+                  const stageMeta =
+                    STAGE_META[founder.projectStatus?.toLowerCase()] || null;
 
                   const lookingFor = Array.isArray(founder.lookingFor)
                     ? founder.lookingFor
@@ -831,10 +986,11 @@ export default function Explore() {
                       className="founder-card foundmet-card border-0 shadow-sm rounded-4 p-3 h-100 d-flex flex-column bg-white"
                       key={founder._id}
                     >
-                      {/* Top Row: Avatar, Name, Role, Rating & Distance */}
+                      {/* Top Row: Avatar, Name, Role, Member Since & Distance */}
                       <div className="d-flex align-items-start justify-content-between mb-2">
                         <div
-                          className="d-flex align-items-center gap-2 cursor-pointer text-truncate flex-grow-1"
+                          className="d-flex align-items-center gap-2 cursor-pointer flex-grow-1"
+                          style={{ minWidth: 0 }}
                           onClick={() => setSelectedFounder(founder)}
                         >
                           <div className="founder-card-avatar-wrap">
@@ -842,27 +998,49 @@ export default function Explore() {
                               src={
                                 founder.photo ||
                                 `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                                  founder.name || "Founder"
+                                  founder.name || "Founder",
                                 )}&background=0B5CFF&color=fff&size=100`
                               }
                               alt={founder.name}
                               className="rounded-circle border flex-shrink-0"
-                              style={{ width: "46px", height: "46px", objectFit: "cover" }}
+                              style={{
+                                width: "46px",
+                                height: "46px",
+                                objectFit: "cover",
+                              }}
                             />
-                            {rating.totalRatings >= 3 && <span className="founder-verified-dot" title="Well-endorsed founder"></span>}
+                            {founder.verified && (
+                              <span
+                                className="founder-verified-dot"
+                                title="Verified founder"
+                              ></span>
+                            )}
                           </div>
-                          <div className="text-truncate">
-                            <h6 className="mb-0 fw-bold text-main text-truncate hover-primary" style={{ fontSize: "14px" }}>
+                          <div style={{ minWidth: 0 }}>
+                            <h6
+                              className="mb-0 fw-bold text-main text-truncate hover-primary"
+                              style={{ fontSize: "14px" }}
+                            >
                               {founder.name}
                             </h6>
-                            <div className="d-flex align-items-center gap-2 mt-1">
-                              <span className="badge bg-primary-subtle text-primary text-capitalize" style={{ fontSize: "9px", padding: "2px 6px" }}>
-                                {founder.role === "co-founder" ? "Co-Founder" : "Founder"}
+                            <div className="d-flex align-items-center gap-2 mt-1 flex-wrap">
+                              <span
+                                className="badge bg-primary-subtle text-primary text-capitalize"
+                                style={{ fontSize: "9px", padding: "2px 6px" }}
+                              >
+                                {founder.role === "co-founder"
+                                  ? "Co-Founder"
+                                  : "Founder"}
                               </span>
-                              <span className="founder-rating-pill">
-                                ⭐ {rating.averageStars}
-                                <span className="opacity-75 fw-normal">({rating.totalRatings})</span>
-                              </span>
+                              {memberSince && (
+                                <span
+                                  className="founder-rating-pill"
+                                  style={{ whiteSpace: "nowrap" }}
+                                >
+                                  <i className="bi bi-calendar-check"></i>
+                                  Since {memberSince}
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -900,14 +1078,18 @@ export default function Explore() {
                           : "Open to partner on new startup opportunities."}
                       </p>
 
-                      {/* Endorsements + skills they bring — the "why this person" signal */}
-                      {(topEndorsements.length > 0 || topSkills.length > 0) && (
+                      {/* What's interesting about them + skills they bring — the "why this person" signal */}
+                      {(aboutText || topSkills.length > 0) && (
                         <div className="endorsement-row mb-2">
-                          {topEndorsements.map((tag) => (
-                            <span key={tag} className="endorsement-chip">✓ {tag}</span>
-                          ))}
+                          {aboutText && (
+                            <span className="endorsement-chip">
+                              💡 {aboutText}
+                            </span>
+                          )}
                           {topSkills.map((skill) => (
-                            <span key={skill} className="skill-chip">{skill}</span>
+                            <span key={skill} className="skill-chip">
+                              {skill}
+                            </span>
                           ))}
                         </div>
                       )}
@@ -923,14 +1105,18 @@ export default function Explore() {
                         </div>
                         <span className="founder-card-footer-loc">
                           <i className="bi bi-pin-map"></i>
-                          {founder.address?.split(",")[0] || "Global"}
+                          {founder.address || "Global"}
                         </span>
                       </div>
 
                       {/* Minimal Action Buttons */}
                       <div className="d-flex gap-2 pt-2 border-top align-items-center">
                         {isSelf ? (
-                          <Link to="/dashboard" className="btn btn-outline-primary btn-sm rounded-pill w-100 py-1" style={{ fontSize: "12px" }}>
+                          <Link
+                            to="/dashboard"
+                            className="btn btn-outline-primary btn-sm rounded-pill w-100 py-1"
+                            style={{ fontSize: "12px" }}
+                          >
                             Your Profile
                           </Link>
                         ) : (
@@ -947,7 +1133,13 @@ export default function Explore() {
                               }`}
                               style={{ fontSize: "12px" }}
                             >
-                              {isConnected ? "Connected" : isPending ? "Request Sent" : connectionLabel(status) === "Respond" ? "Respond" : "+ Connect"}
+                              {isConnected
+                                ? "Connected"
+                                : isPending
+                                  ? "Request Sent"
+                                  : connectionLabel(status) === "Respond"
+                                    ? "Respond"
+                                    : "+ Connect"}
                             </button>
 
                             {isConnected && (
@@ -955,10 +1147,17 @@ export default function Explore() {
                                 type="button"
                                 onClick={() => handleOpenChat(founder)}
                                 className="btn btn-sm btn-primary rounded-circle d-flex align-items-center justify-content-center p-0"
-                                style={{ width: "30px", height: "30px", flexShrink: 0 }}
+                                style={{
+                                  width: "30px",
+                                  height: "30px",
+                                  flexShrink: 0,
+                                }}
                                 title="Chat with founder"
                               >
-                                <i className="bi bi-chat-dots-fill" style={{ fontSize: "12px" }}></i>
+                                <i
+                                  className="bi bi-chat-dots-fill"
+                                  style={{ fontSize: "12px" }}
+                                ></i>
                               </button>
                             )}
 
@@ -966,10 +1165,17 @@ export default function Explore() {
                               type="button"
                               onClick={() => setSelectedFounder(founder)}
                               className="btn btn-sm btn-light border rounded-circle d-flex align-items-center justify-content-center p-0"
-                              style={{ width: "30px", height: "30px", flexShrink: 0 }}
+                              style={{
+                                width: "30px",
+                                height: "30px",
+                                flexShrink: 0,
+                              }}
                               title="View full profile"
                             >
-                              <i className="bi bi-eye" style={{ fontSize: "12px" }}></i>
+                              <i
+                                className="bi bi-eye"
+                                style={{ fontSize: "12px" }}
+                              ></i>
                             </button>
                           </>
                         )}
@@ -981,10 +1187,29 @@ export default function Explore() {
             )}
 
             {!loading && pageCount > 1 && (
-              <nav className="d-flex justify-content-center align-items-center gap-2 mt-4" aria-label="Founder pages">
-                <button type="button" className="btn btn-outline-primary btn-sm rounded-pill" disabled={visiblePage === 1} onClick={() => setPage((value) => value - 1)}>Previous</button>
-                <span className="small text-secondary">Page {visiblePage} of {pageCount}</span>
-                <button type="button" className="btn btn-outline-primary btn-sm rounded-pill" disabled={visiblePage === pageCount} onClick={() => setPage((value) => value + 1)}>Next</button>
+              <nav
+                className="d-flex justify-content-center align-items-center gap-2 mt-4"
+                aria-label="Founder pages"
+              >
+                <button
+                  type="button"
+                  className="btn btn-outline-primary btn-sm rounded-pill"
+                  disabled={visiblePage === 1}
+                  onClick={() => setPage((value) => value - 1)}
+                >
+                  Previous
+                </button>
+                <span className="small text-secondary">
+                  Page {visiblePage} of {pageCount}
+                </span>
+                <button
+                  type="button"
+                  className="btn btn-outline-primary btn-sm rounded-pill"
+                  disabled={visiblePage === pageCount}
+                  onClick={() => setPage((value) => value + 1)}
+                >
+                  Next
+                </button>
               </nav>
             )}
 
@@ -1024,12 +1249,12 @@ export default function Explore() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="modal-content border-0 rounded-4 shadow-lg overflow-hidden">
-
               {/* Header */}
               <div
                 className="p-4 text-white position-relative"
                 style={{
-                  background: "linear-gradient(135deg, #0B5CFF 0%, #7038F5 100%)",
+                  background:
+                    "linear-gradient(135deg, #0B5CFF 0%, #7038F5 100%)",
                 }}
               >
                 <button
@@ -1043,18 +1268,24 @@ export default function Explore() {
                     src={
                       selectedFounder.photo ||
                       `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                        selectedFounder.name || "Founder"
+                        selectedFounder.name || "Founder",
                       )}&background=ffffff&color=0B5CFF&size=150`
                     }
                     alt={selectedFounder.name}
                     className="rounded-circle border border-3 border-white shadow"
-                    style={{ width: "72px", height: "72px", objectFit: "cover" }}
+                    style={{
+                      width: "72px",
+                      height: "72px",
+                      objectFit: "cover",
+                    }}
                   />
                   <div>
                     <h3 className="fw-bold mb-1">{selectedFounder.name}</h3>
                     <div className="d-flex align-items-center gap-2 flex-wrap">
                       <span className="badge bg-white text-primary text-capitalize fw-bold">
-                        {selectedFounder.role === "co-founder" ? "Co-Founder" : "Founder"}
+                        {selectedFounder.role === "co-founder"
+                          ? "Co-Founder"
+                          : "Founder"}
                       </span>
                       <small className="opacity-90">
                         <i className="bi bi-geo-alt me-1"></i>
@@ -1070,7 +1301,9 @@ export default function Explore() {
                 {currentUser && isMongoId(selectedFounder._id) && (
                   <div className="mb-4 p-3 rounded-3 border border-danger-subtle bg-danger-subtle">
                     <div className="d-flex align-items-center justify-content-between gap-2">
-                      <small className="text-danger fw-semibold">See something unsafe or fake?</small>
+                      <small className="text-danger fw-semibold">
+                        See something unsafe or fake?
+                      </small>
                       <button
                         type="button"
                         className="btn btn-sm btn-outline-danger rounded-pill"
@@ -1100,7 +1333,8 @@ export default function Explore() {
                   <h6 className="fw-bold text-uppercase text-secondary small mb-2">
                     Startup / Project Information
                   </h6>
-                  {selectedFounder.hasProject === "yes" && selectedFounder.projectDetails ? (
+                  {selectedFounder.hasProject === "yes" &&
+                  selectedFounder.projectDetails ? (
                     <div className="p-3 bg-light rounded-3 border">
                       <div className="d-flex justify-content-between align-items-center mb-2">
                         <span className="badge bg-success-subtle text-success text-capitalize">
@@ -1113,34 +1347,44 @@ export default function Explore() {
                             rel="noreferrer"
                             className="btn btn-sm btn-outline-primary rounded-pill px-3"
                           >
-                            <i className="bi bi-box-arrow-up-right me-1"></i> Visit Project
+                            <i className="bi bi-box-arrow-up-right me-1"></i>{" "}
+                            Visit Project
                           </a>
                         )}
                       </div>
-                      <p className="mb-0 text-main small">{selectedFounder.projectDetails}</p>
+                      <p className="mb-0 text-main small">
+                        {selectedFounder.projectDetails}
+                      </p>
                     </div>
                   ) : (
                     <p className="text-secondary small mb-0">
-                      Currently open to joining an early-stage startup or exploring new ideas.
+                      Currently open to joining an early-stage startup or
+                      exploring new ideas.
                     </p>
                   )}
                 </div>
 
                 {/* What they bring — skills, a concrete, attractive signal */}
-                {Array.isArray(selectedFounder.canBring) && selectedFounder.canBring.length > 0 && (
-                  <div className="mb-4">
-                    <h6 className="fw-bold text-uppercase text-secondary small mb-2">
-                      What {selectedFounder.name?.split(" ")[0] || "They"} Bring
-                    </h6>
-                    <div className="d-flex flex-wrap gap-2">
-                      {selectedFounder.canBring.map((skill) => (
-                        <span className="skill-chip" style={{ fontSize: "12px", padding: "5px 12px" }} key={skill}>
-                          {skill}
-                        </span>
-                      ))}
+                {Array.isArray(selectedFounder.canBring) &&
+                  selectedFounder.canBring.length > 0 && (
+                    <div className="mb-4">
+                      <h6 className="fw-bold text-uppercase text-secondary small mb-2">
+                        What {selectedFounder.name?.split(" ")[0] || "They"}{" "}
+                        Bring
+                      </h6>
+                      <div className="d-flex flex-wrap gap-2">
+                        {selectedFounder.canBring.map((skill) => (
+                          <span
+                            className="skill-chip"
+                            style={{ fontSize: "12px", padding: "5px 12px" }}
+                            key={skill}
+                          >
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
                 {/* Looking For */}
                 <div className="mb-4">
@@ -1148,68 +1392,69 @@ export default function Explore() {
                     Looking For Team Members
                   </h6>
                   <div className="d-flex flex-wrap gap-2">
-                    {Array.isArray(selectedFounder.lookingFor) && selectedFounder.lookingFor.length > 0 ? (
+                    {Array.isArray(selectedFounder.lookingFor) &&
+                    selectedFounder.lookingFor.length > 0 ? (
                       selectedFounder.lookingFor.map((role) => (
-                        <span className="badge bg-primary text-white px-3 py-2 text-uppercase" key={role}>
+                        <span
+                          className="badge bg-primary text-white px-3 py-2 text-uppercase"
+                          key={role}
+                        >
                           {role} (Lead Partner)
                         </span>
                       ))
                     ) : (
-                      <span className="text-secondary small">Open to all builder roles</span>
+                      <span className="text-secondary small">
+                        Open to all builder roles
+                      </span>
                     )}
                   </div>
                 </div>
 
-                {/* Reputation & Ratings — endorsement tags make the profile feel earned, not just claimed */}
+                {/* Member Since & About — what makes this founder worth reaching out to */}
                 <div className="mb-4 p-3 bg-light rounded-3 border">
-                  <div className="d-flex justify-content-between align-items-center mb-2">
-                    <h6 className="fw-bold text-uppercase text-secondary small mb-0">
-                      Founder Reputation & Endorsements
-                    </h6>
-                    <button
-                      type="button"
-                      onClick={() => setRatingFounder(selectedFounder)}
-                      className="btn btn-sm btn-outline-warning text-dark fw-bold rounded-pill px-3"
-                    >
-                      <i className="bi bi-star-fill text-warning me-1"></i> Endorse
-                    </button>
-                  </div>
+                  <h6 className="fw-bold text-uppercase text-secondary small mb-2">
+                    About{" "}
+                    {selectedFounder.name?.split(" ")[0] || "This Founder"}
+                  </h6>
                   <div className="d-flex align-items-center gap-2 mb-2">
-                    <span className="fs-5 fw-bold text-dark">
-                      ⭐ {(ratingsCache[selectedFounder._id]?.averageStars) || "5.0"}
+                    <span className="founder-rating-pill">
+                      <i className="bi bi-calendar-check"></i>
+                      Member since{" "}
+                      {formatMemberSince(
+                        selectedFounder.createdAt || selectedFounder.joinedAt,
+                      ) || "recently"}
                     </span>
-                    <small className="text-secondary">
-                      ({(ratingsCache[selectedFounder._id]?.totalRatings) || 1} peer review{(ratingsCache[selectedFounder._id]?.totalRatings || 1) === 1 ? "" : "s"})
-                    </small>
                   </div>
-                  {(ratingsCache[selectedFounder._id]?.tags || []).length > 0 && (
-                    <div className="d-flex flex-wrap gap-2">
-                      {ratingsCache[selectedFounder._id].tags.map((tag) => (
-                        <span className="endorsement-chip" style={{ fontSize: "12px", padding: "4px 10px" }} key={tag}>
-                          ✓ {tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
+                  <p className="mb-0 text-main small">
+                    {selectedFounder.aboutMe ||
+                      selectedFounder.interestingFact ||
+                      selectedFounder.bio ||
+                      "This founder hasn't added anything extra about themselves yet."}
+                  </p>
                 </div>
 
                 {/* Mobile Number & Contact Sharing (PRD + User Explicit Requirement) */}
                 <div className="p-3 rounded-3 border bg-light">
                   <h6 className="fw-bold small mb-2">
-                    <i className="bi bi-shield-lock text-primary me-1"></i> Contact & Mobile Number
+                    <i className="bi bi-shield-lock text-primary me-1"></i>{" "}
+                    Contact & Mobile Number
                   </h6>
 
                   {connections[selectedFounder._id] === "connected" ? (
                     <div>
                       <p className="small text-secondary mb-2">
-                        <strong>Email:</strong> {selectedFounder.email || "founder@foundmet.io"}
+                        <strong>Email:</strong>{" "}
+                        {selectedFounder.email || "founder@foundmet.io"}
                       </p>
 
                       {/* Mobile Number Status */}
                       {sharedPhoneNumbers[selectedFounder._id] ? (
                         <div className="p-2 bg-white rounded border d-flex align-items-center justify-content-between">
                           <div>
-                            <span className="small text-secondary d-block" style={{ fontSize: "11px" }}>
+                            <span
+                              className="small text-secondary d-block"
+                              style={{ fontSize: "11px" }}
+                            >
                               Verified Mobile Number:
                             </span>
                             <strong className="text-success fs-6">
@@ -1242,24 +1487,34 @@ export default function Explore() {
                           <div className="d-flex gap-1">
                             <button
                               type="button"
-                              onClick={() => handleRequestPhone(selectedFounder)}
+                              onClick={() =>
+                                handleRequestPhone(selectedFounder)
+                              }
                               className="btn btn-sm btn-outline-primary rounded-pill px-3"
-                              disabled={sharedPhoneNumbers[`req_${selectedFounder._id}`]}
+                              disabled={
+                                sharedPhoneNumbers[`req_${selectedFounder._id}`]
+                              }
                             >
-                              {sharedPhoneNumbers[`req_${selectedFounder._id}`] ? (
+                              {sharedPhoneNumbers[
+                                `req_${selectedFounder._id}`
+                              ] ? (
                                 <>
-                                  <i className="bi bi-hourglass-split me-1"></i> Requested
+                                  <i className="bi bi-hourglass-split me-1"></i>{" "}
+                                  Requested
                                 </>
                               ) : (
                                 <>
-                                  <i className="bi bi-telephone-plus me-1"></i> Request Mobile Number
+                                  <i className="bi bi-telephone-plus me-1"></i>{" "}
+                                  Request Mobile Number
                                 </>
                               )}
                             </button>
 
                             <button
                               type="button"
-                              onClick={() => handleShareMyPhone(selectedFounder)}
+                              onClick={() =>
+                                handleShareMyPhone(selectedFounder)
+                              }
                               className="btn btn-sm btn-outline-success rounded-pill px-2"
                               title="Share your number with them"
                             >
@@ -1272,10 +1527,29 @@ export default function Explore() {
                   ) : (
                     <div className="d-flex align-items-center justify-content-between small text-secondary">
                       <div className="w-100">
-                        <span className="d-block mb-2"><i className="bi bi-lock-fill me-1 text-muted"></i>Send a connection request to unlock messaging.</span>
-                        <textarea className="form-control form-control-sm mb-2" rows="2" maxLength="500" placeholder="Add a short note (optional)" value={connectionNote} onChange={(event) => setConnectionNote(event.target.value)} />
-                        <button type="button" disabled={connectionSending} onClick={() => handleConnectToggle(selectedFounder)} className="btn btn-sm btn-outline-primary rounded-pill px-3">
-                          {connectionSending ? "Sending..." : "Connect with note"}
+                        <span className="d-block mb-2">
+                          <i className="bi bi-lock-fill me-1 text-muted"></i>
+                          Send a connection request to unlock messaging.
+                        </span>
+                        <textarea
+                          className="form-control form-control-sm mb-2"
+                          rows="2"
+                          maxLength="500"
+                          placeholder="Add a short note (optional)"
+                          value={connectionNote}
+                          onChange={(event) =>
+                            setConnectionNote(event.target.value)
+                          }
+                        />
+                        <button
+                          type="button"
+                          disabled={connectionSending}
+                          onClick={() => handleConnectToggle(selectedFounder)}
+                          className="btn btn-sm btn-outline-primary rounded-pill px-3"
+                        >
+                          {connectionSending
+                            ? "Sending..."
+                            : "Connect with note"}
                         </button>
                       </div>
                     </div>
@@ -1343,21 +1617,36 @@ export default function Explore() {
             <div className="modal-content border-0 rounded-4 shadow-lg p-4 text-center">
               <div
                 className="rounded-circle bg-primary-subtle text-primary d-inline-flex p-3 mx-auto mb-3"
-                style={{ width: "64px", height: "64px", alignItems: "center", justifyContent: "center" }}
+                style={{
+                  width: "64px",
+                  height: "64px",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
               >
                 <i className="bi bi-shield-lock-fill fs-2"></i>
               </div>
 
-              <h4 className="fw-bold mb-2">Connect with {authPromptFounder.name}</h4>
+              <h4 className="fw-bold mb-2">
+                Connect with {authPromptFounder.name}
+              </h4>
               <p className="text-secondary small mb-4">
-                To protect founders and maintain an authentic network, please sign in or create your founder profile to send connection requests and chat.
+                To protect founders and maintain an authentic network, please
+                sign in or create your founder profile to send connection
+                requests and chat.
               </p>
 
               <div className="d-grid gap-2 mb-3">
-                <Link to="/login" className="btn btn-foundmet py-2 rounded-pill fw-bold">
+                <Link
+                  to="/login"
+                  className="btn btn-foundmet py-2 rounded-pill fw-bold"
+                >
                   Sign In to Connect
                 </Link>
-                <Link to="/register" className="btn btn-outline-primary py-2 rounded-pill fw-semibold">
+                <Link
+                  to="/register"
+                  className="btn btn-outline-primary py-2 rounded-pill fw-semibold"
+                >
                   Create Founder Profile
                 </Link>
               </div>
@@ -1373,15 +1662,6 @@ export default function Explore() {
           </div>
         </div>
       )}
-
-      {/* Founder Rating Modal */}
-      <RatingModal
-        isOpen={!!ratingFounder}
-        onClose={() => setRatingFounder(null)}
-        targetFounder={ratingFounder}
-        currentUser={currentUser}
-        onRatingSubmitted={handleRatingSubmitted}
-      />
 
       {/* Real-time Socket.IO Chat Window */}
       <ChatWindow
