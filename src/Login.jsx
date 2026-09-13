@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import api from "./services/api.js";
 import Header from "./components/Header.jsx";
 import "./global.css";
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -42,9 +43,14 @@ export default function Login() {
         return;
       }
       const accessToken = res.data?.accessToken || res.data?.data?.accessToken;
-      if (accessToken) sessionStorage.setItem("foundmet_access_token", accessToken);
+      if (accessToken) {
+        sessionStorage.setItem("foundmet_access_token", accessToken);
+        localStorage.setItem("foundmet_access_token", accessToken);
+      }
       localStorage.setItem("foundmet_user", JSON.stringify(user));
-      navigate("/dashboard");
+      const returnPath =
+        typeof location.state?.from === "string" ? location.state.from : "/dashboard";
+      navigate(returnPath, { replace: true });
     } catch (err) {
       const status = err.response?.status;
       const msg =

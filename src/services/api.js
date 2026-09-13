@@ -15,11 +15,13 @@ const api = axios.create({
 api.interceptors.request.use((config) => {
   const isAdminRequest = config.url?.startsWith("/admin");
 
-  const token = sessionStorage.getItem(
-    isAdminRequest
-      ? "foundmet_admin_token"
-      : "foundmet_access_token"
-  );
+  const token =
+    sessionStorage.getItem(
+      isAdminRequest ? "foundmet_admin_token" : "foundmet_access_token"
+    ) ||
+    localStorage.getItem(
+      isAdminRequest ? "foundmet_admin_token" : "foundmet_access_token"
+    );
 
   if (token) {
     config.headers = config.headers || {};

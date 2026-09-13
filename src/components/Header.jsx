@@ -76,7 +76,9 @@ export default function Header() {
     >
       <i
         className={`bi ${
-          theme === "light" ? "bi-moon-stars-fill text-dark" : "bi-sun-fill text-warning"
+          theme === "light"
+            ? "bi-moon-stars-fill text-dark"
+            : "bi-sun-fill text-warning"
         }`}
       ></i>
     </button>
@@ -93,7 +95,9 @@ export default function Header() {
             onClick={() => setMenuOpen(false)}
           >
             <img src={logo} alt="FoundMet Logo" className="foundmet-logo" />
-            <span className="fw-bold fs-4 foundmet-gradient-text">FoundMet</span>
+            <span className="fw-bold fs-4 foundmet-gradient-text">
+              FoundMet
+            </span>
           </Link>
 
           {/* Controls on right for mobile: Theme toggle + Nav toggle */}
@@ -120,7 +124,9 @@ export default function Header() {
               <li className="nav-item">
                 <Link
                   className={`nav-link px-3 py-2 rounded-3 ${
-                    isActive("/") ? "active fw-bold text-primary bg-primary bg-opacity-10" : ""
+                    isActive("/")
+                      ? "active fw-bold text-primary bg-primary bg-opacity-10"
+                      : ""
                   }`}
                   to="/"
                   aria-current={isActive("/") ? "page" : undefined}
@@ -143,6 +149,7 @@ export default function Header() {
                   Explore Feed
                 </Link>
               </li>
+              
               {currentUser && (
                 <li className="nav-item">
                   <Link
@@ -184,7 +191,11 @@ export default function Header() {
                       }
                       alt={currentUser.name}
                       className="rounded-circle border"
-                      style={{ width: "32px", height: "32px", objectFit: "cover" }}
+                      style={{
+                        width: "32px",
+                        height: "32px",
+                        objectFit: "cover",
+                      }}
                     />
                     <span className="fw-semibold text-main small">
                       {currentUser.name?.split(" ")[0]}
@@ -195,7 +206,9 @@ export default function Header() {
                       to="/superadmin"
                       onClick={() => setMenuOpen(false)}
                       className={`small text-decoration-none ${
-                        isActive("/superadmin") ? "fw-bold text-primary" : "text-muted"
+                        isActive("/superadmin")
+                          ? "fw-bold text-primary"
+                          : "text-muted"
                       }`}
                     >
                       Superadmin
@@ -230,7 +243,9 @@ export default function Header() {
                     to="/superadmin"
                     onClick={() => setMenuOpen(false)}
                     className={`small text-decoration-none text-center ${
-                      isActive("/superadmin") ? "fw-bold text-primary" : "text-muted"
+                      isActive("/superadmin")
+                        ? "fw-bold text-primary"
+                        : "text-muted"
                     }`}
                   >
                     Superadmin

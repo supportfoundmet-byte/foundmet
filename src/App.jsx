@@ -5,7 +5,7 @@ import Explore from "./Explore.jsx";
 import Register from "./Register.jsx";
 import Login from "./Login.jsx";
 import Dashboard from "./Dashboard.jsx";
-import MyPosts from "./MyPosts.jsx";
+
 import Terms from "./Terms.jsx";
 import Privacy from "./Privacy.jsx";
 import Cookies from "./Cookies.jsx";
@@ -37,10 +37,7 @@ const PAGE_SEO = {
     title: "Dashboard | FoundMet",
     description: "Manage connections, messages, and your startup workspace.",
   },
-  "/my-posts": {
-    title: "My posts | FoundMet",
-    description: "View and manage the startup updates and ideas you have shared on FoundMet.",
-  },
+ 
   "/terms": {
     title: "Terms of Service | FoundMet",
     description: "Read the FoundMet terms of service.",
@@ -73,7 +70,7 @@ export default function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/my-posts" element={<MyPosts />} />
+          
           <Route path="/app" element={<Dashboard />} />
           <Route path="/superadmin" element={<Admin />} />
           <Route path="/terms" element={<Terms />} />

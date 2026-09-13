@@ -1,13 +1,25 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import ChatWindow from "./components/ChatWindow.jsx";
+import VideoCallManager from "./components/VideoCallManager.jsx";
 import RatingModal from "./components/RatingModal.jsx";
 import DashboardSidebar from "./components/DashboardSidebar.jsx";
-import { DashboardHero, DashboardToast } from "./components/DashboardChrome.jsx";
+import {
+  DashboardHero,
+  DashboardToast,
+} from "./components/DashboardChrome.jsx";
 import api from "./services/api.js";
-import { disconnectSocket } from "./services/socket.js";
-import { notifyBrowser } from "./services/notifications.js";
+import {
+  disconnectSocket,
+  getSocket,
+  registerPresence,
+} from "./services/socket.js";
+import {
+  notifyBrowser,
+  registerPushSubscription,
+  unregisterPushSubscription,
+} from "./services/notifications.js";
 import "./global.css";
 
 export default function Dashboard() {
@@ -257,6 +269,9 @@ export default function Dashboard() {
   const [ratingFounder, setRatingFounder] = useState(null);
   const [toastMessage, setToastMessage] = useState("");
 
+  // Video call controller — set by VideoCallManager via prop
+  const videoCallRef = useRef(null);
+
   const showToast = (msg) => {
     setToastMessage(msg);
     setTimeout(() => {
@@ -264,8 +279,92 @@ export default function Dashboard() {
     }, 3500);
   };
 
+
+  // ── Socket: real-time connection request notifications ────────────────────
+  useEffect(() => {
+    if (!currentUser?._id) return;
+
+    const socket = registerPresence(currentUser._id);
+
+    const handleConnectionRequest = (notif) => {
+      notifyBrowser(
+        "New Connection Request",
+        `${notif.fromUserName || "A founder"} wants to connect with you.`,
+      );
+      showToast(
+        `${notif.fromUserName || "A founder"} sent you a connection request.`,
+      );
+      // Re-fetch connections to update the UI badge
+      api
+        .get("/api/v1/connections", { timeout: 8000 })
+        .then(({ data }) => {
+          if (data?.success) setReceivedRequests(data.receivedRequests || []);
+        })
+        .catch(() => {});
+    };
+
+    const handleConnectionResponse = (notif) => {
+      if (notif.status === "accepted") {
+        notifyBrowser(
+          "Connection Accepted!",
+          `${notif.responderName || "A founder"} accepted your connection request.`,
+        );
+        showToast(
+          `${notif.responderName || "A founder"} accepted your connection request!`,
+        );
+        // Re-fetch connections to add the new connection to the list
+        api
+          .get("/api/v1/connections", { timeout: 8000 })
+          .then(({ data }) => {
+            if (!data?.success) return;
+            const profiles = (data.connected || [])
+              .map((c) => {
+                const profile =
+                  String(c.fromUser?._id) === String(currentUser._id)
+                    ? c.toUser
+                    : c.fromUser;
+                return profile ? { ...profile, connectionId: c._id } : null;
+              })
+              .filter(Boolean);
+            setConnectionProfiles(profiles);
+            const statuses = {};
+            profiles.forEach((p) => {
+              statuses[p._id] = "connected";
+            });
+            setConnections(statuses);
+            localStorage.setItem(
+              "foundmet_connections",
+              JSON.stringify(statuses),
+            );
+          })
+          .catch(() => {});
+      }
+    };
+
+    socket.on("connection_request_received", handleConnectionRequest);
+    socket.on("connection_request_responded", handleConnectionResponse);
+
+    return () => {
+      socket.off("connection_request_received", handleConnectionRequest);
+      socket.off("connection_request_responded", handleConnectionResponse);
+    };
+  }, [currentUser?._id]);
+
+  // ── Register Web Push subscription once user is authenticated ─────────────
+  useEffect(() => {
+    if (!currentUser?._id) return;
+    // Register service worker and push subscription
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker
+        .register("/sw.js")
+        .then(() => registerPushSubscription())
+        .catch(() => {});
+    }
+  }, [currentUser?._id]);
+
   const handleLogout = () => {
     api.post("/auth/logout").catch(() => {});
+    unregisterPushSubscription().catch(() => {});
     disconnectSocket();
     localStorage.removeItem("foundmet_user");
     sessionStorage.removeItem("foundmet_access_token");
@@ -511,7 +610,6 @@ export default function Dashboard() {
   if (!currentUser) {
     return (
       <div className="dashboard-page min-vh-100 bg-background d-flex flex-column">
-      
         <div className="container my-auto py-5 text-center px-3">
           <div
             className="card foundmet-card border-0 shadow-sm p-4 p-md-5 mx-auto bg-white"
@@ -1665,6 +1763,19 @@ export default function Dashboard() {
         currentUser={currentUser}
         connections={connections}
         availableFounders={connectionProfiles}
+        onStartVideoCall={(contact) =>
+          videoCallRef.current?.startCall(contact, "video")
+        }
+        onStartAudioCall={(contact) =>
+          videoCallRef.current?.startCall(contact, "audio")
+        }
+      />
+
+      {/* WebRTC Video / Audio Call Manager */}
+      <VideoCallManager
+        socket={getSocket()}
+        currentUser={currentUser}
+        ref={videoCallRef}
       />
 
       {/* Founder Rating Modal */}
