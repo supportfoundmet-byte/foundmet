@@ -48,6 +48,10 @@ const VideoCallManager = forwardRef(function VideoCallManager({ socket, currentU
   const [isMuted, setIsMuted] = useState(false);
   const [isCameraOff, setIsCameraOff] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isSpeakerMuted, setIsSpeakerMuted] = useState(false);
+  const [audioOutputDevices, setAudioOutputDevices] = useState([]);
+  const [selectedSinkId, setSelectedSinkId] = useState("");
+  const [showSpeakerMenu, setShowSpeakerMenu] = useState(false);
 
   // ── Refs for WebRTC & Audio ───────────────────────────────────────────────
   const pcRef = useRef(null);
@@ -171,6 +175,9 @@ const VideoCallManager = forwardRef(function VideoCallManager({ socket, currentU
     setIsMuted(false);
     setIsCameraOff(false);
     setIsFullscreen(false);
+    setIsSpeakerMuted(false);
+    setShowSpeakerMenu(false);
+    setAudioOutputDevices([]);
   }, [stopRingtone]);
 
   // ── Acquire Media Devices ──────────────────────────────────────────────────
@@ -358,7 +365,7 @@ const VideoCallManager = forwardRef(function VideoCallManager({ socket, currentU
     resetCallState();
   }, [socket, stopRingtone, resetCallState]);
 
-  // ── Controls: Mute & Camera ────────────────────────────────────────────────
+  // ── Controls: Mute, Camera & Speaker ─────────────────────────────────────
   const toggleMute = useCallback(() => {
     const stream = localStreamRef.current;
     if (!stream) return;
@@ -373,10 +380,32 @@ const VideoCallManager = forwardRef(function VideoCallManager({ socket, currentU
     setIsCameraOff((off) => !off);
   }, []);
 
+  const toggleSpeaker = useCallback(() => {
+    if (remoteVideoRef.current) {
+      const next = !remoteVideoRef.current.muted;
+      remoteVideoRef.current.muted = next;
+      setIsSpeakerMuted(next);
+    } else {
+      setIsSpeakerMuted((prev) => !prev);
+    }
+  }, []);
+
+  const changeAudioOutput = useCallback(async (sinkId) => {
+    try {
+      if (remoteVideoRef.current && typeof remoteVideoRef.current.setSinkId === "function") {
+        await remoteVideoRef.current.setSinkId(sinkId);
+        setSelectedSinkId(sinkId);
+      }
+    } catch (err) {
+      console.warn("[WebRTC] setSinkId error:", err.message);
+    }
+    setShowSpeakerMenu(false);
+  }, []);
+
   // ── Expose startCall via ref ───────────────────────────────────────────────
   useImperativeHandle(ref, () => ({ startCall }), [startCall]);
 
-  // ── Attach Video Streams on Render ────────────────────────────────────────
+  // ── Attach Video Streams & Enumerate Audio Output Devices on Render ───────
   useEffect(() => {
     if (callState === "active") {
       if (remoteVideoRef.current && remoteStreamRef.current) {
@@ -384,6 +413,17 @@ const VideoCallManager = forwardRef(function VideoCallManager({ socket, currentU
       }
       if (localVideoRef.current && localStreamRef.current) {
         localVideoRef.current.srcObject = localStreamRef.current;
+      }
+
+      // Enumerate available speaker/headphone devices
+      if (navigator.mediaDevices && typeof navigator.mediaDevices.enumerateDevices === "function") {
+        navigator.mediaDevices
+          .enumerateDevices()
+          .then((devices) => {
+            const outputs = devices.filter((d) => d.kind === "audiooutput");
+            setAudioOutputDevices(outputs);
+          })
+          .catch(() => {});
       }
     }
   }, [callState]);
@@ -729,6 +769,69 @@ const VideoCallManager = forwardRef(function VideoCallManager({ socket, currentU
                 <i className={`bi bi-${isCameraOff ? "camera-video-off-fill" : "camera-video-fill"} fs-5`} />
               </button>
             )}
+
+            {/* Speaker / Audio Output Toggle & Selector */}
+            <div className="position-relative">
+              <button
+                type="button"
+                onClick={audioOutputDevices.length > 1 ? () => setShowSpeakerMenu((s) => !s) : toggleSpeaker}
+                className={`btn rounded-circle d-flex align-items-center justify-content-center shadow ${isSpeakerMuted ? "btn-danger" : "btn-secondary"}`}
+                style={{ width: 52, height: 52 }}
+                title={isSpeakerMuted ? "Unmute Speaker" : "Speaker Options"}
+              >
+                <i className={`bi bi-${isSpeakerMuted ? "volume-mute-fill" : "volume-up-fill"} fs-5`} />
+              </button>
+
+              {/* Speaker Device Selector Dropdown */}
+              {showSpeakerMenu && (
+                <div
+                  className="position-absolute bottom-100 start-50 translate-middle-x mb-2 p-2 bg-dark rounded-3 shadow-lg border border-secondary text-nowrap"
+                  style={{ zIndex: 100, minWidth: 200 }}
+                >
+                  <div className="d-flex justify-content-between align-items-center mb-2 px-2 border-bottom border-secondary pb-1">
+                    <span className="small fw-bold text-white">Speaker Options</span>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-link text-secondary p-0 text-decoration-none"
+                      onClick={() => setShowSpeakerMenu(false)}
+                    >
+                      <i className="bi bi-x-lg" />
+                    </button>
+                  </div>
+
+                  {/* Toggle Mute Output */}
+                  <button
+                    type="button"
+                    onClick={toggleSpeaker}
+                    className={`btn btn-sm w-100 text-start mb-2 d-flex align-items-center gap-2 ${isSpeakerMuted ? "btn-danger" : "btn-outline-light"}`}
+                  >
+                    <i className={`bi bi-${isSpeakerMuted ? "volume-mute-fill" : "volume-up-fill"}`} />
+                    <span>{isSpeakerMuted ? "Unmute Sound" : "Mute Sound"}</span>
+                  </button>
+
+                  {/* Available Output Devices */}
+                  {audioOutputDevices.length > 0 && (
+                    <div className="d-flex flex-column gap-1">
+                      <div className="text-secondary" style={{ fontSize: 10 }}>OUTPUT DEVICE</div>
+                      {audioOutputDevices.map((device, idx) => (
+                        <button
+                          key={device.deviceId || idx}
+                          type="button"
+                          onClick={() => changeAudioOutput(device.deviceId)}
+                          className={`btn btn-sm text-start py-1 px-2 d-flex align-items-center justify-content-between ${selectedSinkId === device.deviceId ? "btn-primary" : "btn-dark text-white"}`}
+                          style={{ fontSize: 12 }}
+                        >
+                          <span className="text-truncate" style={{ maxWidth: 180 }}>
+                            {device.label || `Speaker ${idx + 1}`}
+                          </span>
+                          {selectedSinkId === device.deviceId && <i className="bi bi-check2" />}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
             {/* Fullscreen Toggle */}
             <button

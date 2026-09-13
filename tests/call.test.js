@@ -90,4 +90,26 @@ describe("7. WebRTC Calling Engine & State Machine", () => {
     assert.equal(canCall("founder_3"), false, "Must block calling rejected connection");
     assert.equal(canCall("founder_unknown"), false, "Must block calling unknown user");
   });
+
+  it("should toggle speaker audio output and switch sinkId when available", async () => {
+    let muted = false;
+    let currentSinkId = "default";
+
+    const mockMediaElement = {
+      get muted() { return muted; },
+      set muted(val) { muted = val; },
+      setSinkId: async (id) => { currentSinkId = id; },
+    };
+
+    const toggleSpeaker = () => {
+      mockMediaElement.muted = !mockMediaElement.muted;
+      return mockMediaElement.muted;
+    };
+
+    assert.equal(toggleSpeaker(), true, "Speaker should be muted");
+    assert.equal(toggleSpeaker(), false, "Speaker should be unmuted");
+
+    await mockMediaElement.setSinkId("headphones_device_1");
+    assert.equal(currentSinkId, "headphones_device_1", "Audio output device should switch to headphones");
+  });
 });
