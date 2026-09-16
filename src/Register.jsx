@@ -2,27 +2,13 @@ import { useState, useRef, useEffect, useId } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "./services/api.js";
 import Header from "./components/Header.jsx";
+import {
+  getActiveSteps,
+  getPasswordStrength,
+  validateStepInput,
+  validateSubmission,
+} from "./utils/registerValidation.js";
 import "./global.css";
-
-// Explicit Steps Sequence
-const STEP_KEYS = [
-  "name",
-  "email",
-  "password",
-  "role",
-  "address",
-  "matchRole",
-  "canBring",
-  "buildType",
-  "commitment",
-  "lookingFor",
-  "hasProject",
-  "projectStatus", // conditional
-  "projectDetails", // conditional
-  "projectLink", // conditional
-  "photo",
-  "review",
-];
 
 function ChoiceStep({ title, options, value, multiple = false, onSelect }) {
   return (
@@ -94,20 +80,7 @@ export default function Register() {
   const [locating, setLocating] = useState(false);
 
   // Compute active steps list based on hasProject
-  const getActiveSteps = () => {
-    if (formData.hasProject === "yes") {
-      return STEP_KEYS;
-    }
-    // If no project, omit projectStatus, projectDetails, projectLink
-    return STEP_KEYS.filter(
-      (key) =>
-        key !== "projectStatus" &&
-        key !== "projectDetails" &&
-        key !== "projectLink",
-    );
-  };
-
-  const activeSteps = getActiveSteps();
+  const activeSteps = getActiveSteps(formData.hasProject);
   const currentIndex = activeSteps.indexOf(currentStep);
   const totalSteps = activeSteps.length;
   // Progress percentage (review step is 100%)
@@ -224,85 +197,14 @@ export default function Register() {
     setImagePreview(null);
   };
 
-  // Password strength calculator
-  const getPasswordStrength = (pass) => {
-    if (!pass) return { score: 0, label: "", color: "" };
-    let score = 0;
-    if (pass.length >= 8) score++;
-    if (/[A-Z]/.test(pass)) score++;
-    if (/[0-9]/.test(pass)) score++;
-    if (/[^A-Za-z0-9]/.test(pass)) score++;
-
-    switch (score) {
-      case 1:
-        return { score, label: "Weak", color: "bg-danger" };
-      case 2:
-        return { score, label: "Fair", color: "bg-warning" };
-      case 3:
-        return { score, label: "Good", color: "bg-info" };
-      case 4:
-        return { score, label: "Strong", color: "bg-success" };
-      default:
-        return { score: 1, label: "Too Short", color: "bg-danger" };
-    }
-  };
-
   const passwordStrength = getPasswordStrength(formData.password);
 
   // Validate step input before navigating
   const validateStep = (stepKey) => {
-    if (stepKey === "name") {
-      if (!formData.name.trim()) {
-        setValidationError("Please enter your full name.");
-        return false;
-      }
-      if (formData.name.trim().length < 2) {
-        setValidationError("Name must be at least 2 characters.");
-        return false;
-      }
-    }
-
-    if (stepKey === "email") {
-      if (!formData.email.trim()) {
-        setValidationError("Please enter your email address.");
-        return false;
-      }
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
-        setValidationError(
-          "Please enter a valid email address (e.g. name@domain.com).",
-        );
-        return false;
-      }
-    }
-
-    if (stepKey === "password") {
-      if (!formData.password) {
-        setValidationError("Please create a password.");
-        return false;
-      }
-      if (formData.password.length < 8) {
-        setValidationError("Password must be at least 8 characters long.");
-        return false;
-      }
-    }
-
-    if (stepKey === "address") {
-      if (!formData.address.trim()) {
-        setValidationError("Please specify your city or location.");
-        return false;
-      }
-
-      if (stepKey === "canBring" && formData.canBring.length === 0) {
-        setValidationError("Choose at least one strength.");
-        return false;
-      }
-    }
-
-    if (stepKey === "projectDetails" && formData.hasProject === "yes") {
-      if (!formData.projectDetails.trim()) {
-        setValidationError("Please briefly describe what you are building.");
-        return false;
-      }
+    const result = validateStepInput(stepKey, formData, imageFile);
+    if (!result.valid) {
+      setValidationError(result.message);
+      return false;
     }
 
     setValidationError("");
@@ -316,7 +218,7 @@ export default function Register() {
     setValidationError("");
     setServerError("");
 
-    const steps = getActiveSteps();
+    const steps = getActiveSteps(formData.hasProject);
     const nextIdx = currentIndex + 1;
     if (nextIdx < steps.length) {
       setCurrentStep(steps[nextIdx]);
@@ -328,7 +230,7 @@ export default function Register() {
     setValidationError("");
     setServerError("");
 
-    const steps = getActiveSteps();
+    const steps = getActiveSteps(formData.hasProject);
     const prevIdx = currentIndex - 1;
     if (prevIdx >= 0) {
       setCurrentStep(steps[prevIdx]);
@@ -352,10 +254,14 @@ export default function Register() {
 
   // Final Form Submission to Backend
   const handleSubmit = async () => {
-    if (!agreedToTerms) {
-      setValidationError(
-        "Please agree to the Terms of Service & Privacy Policy before creating your profile.",
-      );
+    const submissionCheck = validateSubmission({
+      formData,
+      imageFile,
+      agreedToTerms,
+    });
+
+    if (!submissionCheck.valid) {
+      setValidationError(submissionCheck.message);
       return;
     }
 
@@ -1250,6 +1156,7 @@ export default function Register() {
                       onChange={handleImageChange}
                       className="d-none"
                       required
+                      aria-label="Profile photo"
                     />
                   </div>
                 </div>
