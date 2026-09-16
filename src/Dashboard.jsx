@@ -155,6 +155,8 @@ export default function Dashboard() {
           code === "ACCOUNT_UNAVAILABLE"
         ) {
           localStorage.removeItem("foundmet_user");
+          localStorage.removeItem("foundmet_access_token");
+          sessionStorage.removeItem("foundmet_access_token");
           setCurrentUser(null);
           navigate("/login", { replace: true });
         }

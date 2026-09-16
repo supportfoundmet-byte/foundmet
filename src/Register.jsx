@@ -40,7 +40,9 @@ function ChoiceStep({ title, options, value, multiple = false, onSelect }) {
                 onClick={() => onSelect(key)}
               >
                 <span className="fw-semibold text-capitalize">{label}</span>
-                <i className={`bi ${selected ? "bi-check-circle-fill text-primary" : "bi-circle text-muted"} float-end`}></i>
+                <i
+                  className={`bi ${selected ? "bi-check-circle-fill text-primary" : "bi-circle text-muted"} float-end`}
+                ></i>
               </button>
             </div>
           );
@@ -133,17 +135,51 @@ export default function Register() {
   };
 
   const useCurrentLocation = () => {
-    if (!navigator.geolocation) { setValidationError("Location is not supported. Please enter your city manually."); return; }
-    setLocating(true); setValidationError("");
-    navigator.geolocation.getCurrentPosition(async ({ coords }) => {
-      try {
-        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${coords.latitude}&lon=${coords.longitude}`);
-        const result = await response.json(); const a = result.address || {};
-        const location = [a.city || a.town || a.village || a.municipality, a.state, a.country].filter(Boolean).join(", ");
-        setFormData((prev) => ({ ...prev, address: location || `${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)}` }));
-      } catch { setValidationError("We could not read your location. Please enter it manually."); }
-      finally { setLocating(false); }
-    }, () => { setLocating(false); setValidationError("Location permission was not granted. Please enter your city manually."); }, { timeout: 10000, maximumAge: 300000 });
+    if (!navigator.geolocation) {
+      setValidationError(
+        "Location is not supported. Please enter your city manually.",
+      );
+      return;
+    }
+    setLocating(true);
+    setValidationError("");
+    navigator.geolocation.getCurrentPosition(
+      async ({ coords }) => {
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${coords.latitude}&lon=${coords.longitude}`,
+          );
+          const result = await response.json();
+          const a = result.address || {};
+          const location = [
+            a.city || a.town || a.village || a.municipality,
+            a.state,
+            a.country,
+          ]
+            .filter(Boolean)
+            .join(", ");
+          setFormData((prev) => ({
+            ...prev,
+            address:
+              location ||
+              `${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)}`,
+          }));
+        } catch {
+          setValidationError(
+            "We could not read your location. Please enter it manually.",
+          );
+        } finally {
+          setLocating(false);
+        }
+      },
+      () => {
+        setLocating(false);
+        setValidationError(
+          "Location permission was not granted. Please enter your city manually.",
+        );
+      },
+      { timeout: 10000, maximumAge: 300000 },
+    );
   };
 
   // Toggle Looking For multi-select
@@ -317,7 +353,9 @@ export default function Register() {
   // Final Form Submission to Backend
   const handleSubmit = async () => {
     if (!agreedToTerms) {
-      setValidationError("Please agree to the Terms of Service & Privacy Policy before creating your profile.");
+      setValidationError(
+        "Please agree to the Terms of Service & Privacy Policy before creating your profile.",
+      );
       return;
     }
 
@@ -351,25 +389,25 @@ export default function Register() {
       formData.lookingFor.forEach((role) => {
         data.append("lookingFor", role);
       });
-      formData.canBring.forEach((strength) => data.append("canBring", strength));
+      formData.canBring.forEach((strength) =>
+        data.append("canBring", strength),
+      );
 
       if (imageFile) {
         data.append("image", imageFile);
       }
 
-      const res = await api.post(
-        "/auth/create-account",
-        data,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
+      const res = await api.post("/auth/create-account", data, {
+        headers: {
+          "Content-Type": "multipart/form-data",
         },
-      );
+      });
 
       if (res.status === 201 || res.status === 200) {
-        const accessToken = res.data?.accessToken || res.data?.data?.accessToken;
-        if (accessToken) sessionStorage.setItem("foundmet_access_token", accessToken);
+        const accessToken =
+          res.data?.accessToken || res.data?.data?.accessToken;
+        if (accessToken)
+          sessionStorage.setItem("foundmet_access_token", accessToken);
         if (res.data?.user) {
           localStorage.setItem("foundmet_user", JSON.stringify(res.data.user));
         }
@@ -755,11 +793,20 @@ export default function Register() {
                     remote work.
                   </p>
                   <div className="mb-3">
-                    <button type="button" className="btn btn-primary w-100 rounded-pill py-3 mb-3" onClick={useCurrentLocation} disabled={locating}>
-                       <i className={`bi ${locating ? "bi-arrow-repeat" : "bi-geo-alt-fill"} me-2`}></i>
-                       {locating ? "Finding your location..." : "Use my current location"}
-                     </button>
-                     <input
+                    <button
+                      type="button"
+                      className="btn btn-primary w-100 rounded-pill py-3 mb-3"
+                      onClick={useCurrentLocation}
+                      disabled={locating}
+                    >
+                      <i
+                        className={`bi ${locating ? "bi-arrow-repeat" : "bi-geo-alt-fill"} me-2`}
+                      ></i>
+                      {locating
+                        ? "Finding your location..."
+                        : "Use my current location"}
+                    </button>
+                    <input
                       ref={inputRef}
                       type="text"
                       name="address"
@@ -774,7 +821,9 @@ export default function Register() {
 
                   {/* Quick Pill presets */}
                   <div className="d-flex flex-wrap gap-2 align-items-center mb-4">
-                    <small className="text-secondary me-1">Or choose a location:</small>
+                    <small className="text-secondary me-1">
+                      Or choose a location:
+                    </small>
                     {[
                       "Bangalore, India",
                       "Delhi NCR, India",
@@ -810,7 +859,17 @@ export default function Register() {
               {currentStep === "canBring" && (
                 <ChoiceStep
                   title="What can you bring?"
-                  options={["technology", "business", "design", "marketing", "product", "other"].map((value) => [value, value[0].toUpperCase() + value.slice(1)])}
+                  options={[
+                    "technology",
+                    "business",
+                    "design",
+                    "marketing",
+                    "product",
+                    "other",
+                  ].map((value) => [
+                    value,
+                    value[0].toUpperCase() + value.slice(1),
+                  ])}
                   value={formData.canBring}
                   multiple
                   onSelect={(value) => toggleChoice("canBring", value)}
@@ -820,7 +879,14 @@ export default function Register() {
               {currentStep === "buildType" && (
                 <ChoiceStep
                   title="What do you want to build?"
-                  options={["startup", "product", "business", "not-sure"].map((value) => [value, value === "not-sure" ? "Not sure yet" : value[0].toUpperCase() + value.slice(1)])}
+                  options={["startup", "product", "business", "not-sure"].map(
+                    (value) => [
+                      value,
+                      value === "not-sure"
+                        ? "Not sure yet"
+                        : value[0].toUpperCase() + value.slice(1),
+                    ],
+                  )}
                   value={formData.buildType}
                   onSelect={(value) => toggleChoice("buildType", value)}
                 />
@@ -829,7 +895,9 @@ export default function Register() {
               {currentStep === "commitment" && (
                 <ChoiceStep
                   title="How committed are you?"
-                  options={["full-time", "part-time", "exploring"].map((value) => [value, value[0].toUpperCase() + value.slice(1)])}
+                  options={["full-time", "part-time", "exploring"].map(
+                    (value) => [value, value[0].toUpperCase() + value.slice(1)],
+                  )}
                   value={formData.commitment}
                   onSelect={(value) => toggleChoice("commitment", value)}
                 />
@@ -910,7 +978,8 @@ export default function Register() {
                     Do you have a project or idea?
                   </h2>
                   <p className="text-secondary mb-4">
-                    Whether it's an idea on paper or a live product, let us know!
+                    Whether it's an idea on paper or a live product, let us
+                    know!
                   </p>
 
                   <div className="row g-3 mb-4">
@@ -936,7 +1005,9 @@ export default function Register() {
                         >
                           <i className="bi bi-rocket-takeoff-fill"></i>
                         </div>
-                        <h4 className="fw-bold mb-1">Yes, I have an idea/project</h4>
+                        <h4 className="fw-bold mb-1">
+                          Yes, I have an idea/project
+                        </h4>
                         <p className="text-secondary small mb-0">
                           Looking for co-founders to build and scale together
                         </p>
@@ -1178,6 +1249,7 @@ export default function Register() {
                       accept="image/*"
                       onChange={handleImageChange}
                       className="d-none"
+                      required
                     />
                   </div>
                 </div>
@@ -1340,7 +1412,9 @@ export default function Register() {
                         >
                           Privacy Policy
                         </Link>
-                        . I understand my phone number and private contact details remain private until I approve sharing with connected builders.
+                        . I understand my phone number and private contact
+                        details remain private until I approve sharing with
+                        connected builders.
                       </label>
                     </div>
                   </div>
@@ -1487,7 +1561,9 @@ export default function Register() {
                     <div className="d-flex flex-wrap gap-2">
                       {formData.lookingFor.map((item) => (
                         <span className="skill-tag" key={item}>
-                          {item.replaceAll("-", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+                          {item
+                            .replaceAll("-", " ")
+                            .replace(/\b\w/g, (c) => c.toUpperCase())}
                         </span>
                       ))}
                     </div>
@@ -1544,7 +1620,9 @@ export default function Register() {
           >
             <div className="modal-content border-0 rounded-4 shadow-lg overflow-hidden">
               <div className="modal-header border-0 bg-primary text-white p-3 px-4">
-                <h5 className="modal-title fw-bold mb-0">FoundMet Terms of Service</h5>
+                <h5 className="modal-title fw-bold mb-0">
+                  FoundMet Terms of Service
+                </h5>
                 <button
                   type="button"
                   className="btn-close btn-close-white"
@@ -1552,19 +1630,29 @@ export default function Register() {
                 ></button>
               </div>
               <div className="modal-body p-4 small text-secondary">
-                <h6 className="fw-bold text-dark mb-1">1. 100% Idea & Code Ownership</h6>
+                <h6 className="fw-bold text-dark mb-1">
+                  1. 100% Idea & Code Ownership
+                </h6>
                 <p>
-                  You retain full ownership of your ideas, intellectual property, and code. FoundMet takes 0 equity and 0 IP.
+                  You retain full ownership of your ideas, intellectual
+                  property, and code. FoundMet takes 0 equity and 0 IP.
                 </p>
 
-                <h6 className="fw-bold text-dark mb-1">2. Contact & Mobile Privacy</h6>
+                <h6 className="fw-bold text-dark mb-1">
+                  2. Contact & Mobile Privacy
+                </h6>
                 <p>
-                  Your phone number is strictly private. It is never displayed publicly and can only be shared with your explicit approval after mutual connection acceptance.
+                  Your phone number is strictly private. It is never displayed
+                  publicly and can only be shared with your explicit approval
+                  after mutual connection acceptance.
                 </p>
 
-                <h6 className="fw-bold text-dark mb-1">3. Respectful Collaboration</h6>
+                <h6 className="fw-bold text-dark mb-1">
+                  3. Respectful Collaboration
+                </h6>
                 <p>
-                  FoundMet is a community of builders. Spam, fraudulent pitches, or harassment will result in immediate account termination.
+                  FoundMet is a community of builders. Spam, fraudulent pitches,
+                  or harassment will result in immediate account termination.
                 </p>
               </div>
               <div className="modal-footer border-top p-3 bg-light">

@@ -48,6 +48,7 @@ const VideoCallManager = forwardRef(function VideoCallManager({ socket, currentU
   const [isMuted, setIsMuted] = useState(false);
   const [isCameraOff, setIsCameraOff] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
   const [isSpeakerMuted, setIsSpeakerMuted] = useState(false);
   const [audioOutputDevices, setAudioOutputDevices] = useState([]);
   const [selectedSinkId, setSelectedSinkId] = useState("");
