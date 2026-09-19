@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import Header from "./components/Header.jsx";
-
+import Footer from "./components/Footer.jsx";
 const SAMPLE_FOUNDERS = [
   {
     name: "Arjun Sharma",
@@ -366,7 +366,7 @@ export default function Home() {
       </section>
 
       {/* ================= FOOTER ================= */}
-      <footer className="mt-auto py-4 bg-white border-top">
+      {/* <footer className="mt-auto py-4 bg-white border-top">
         <div className="container d-flex flex-column flex-md-row align-items-center justify-content-between gap-3 text-secondary small">
           <div className="d-flex align-items-center gap-2">
             <span className="fw-bold text-main">FoundMet</span>
@@ -389,7 +389,8 @@ export default function Home() {
             </Link>
           </div>
         </div>
-      </footer>
+      </footer> */}
+      <Footer/>
     </div>
   );
 }

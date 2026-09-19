@@ -15,22 +15,24 @@ export default function Privacy() {
 
           {/* Header */}
           <div className="mb-5">
-            <span className="hero-badge mb-2">Privacy Policy</span>
+            <span className="hero-badge mb-2">
+              Privacy, Security & Intellectual Property
+            </span>
 
             <h1 className="fw-bold mt-2">
               FoundMet Privacy Policy
             </h1>
 
             <p className="text-secondary small mb-1">
-              Last Updated: September 11, 2026
+              Last Updated: September 2026
             </p>
 
             <p className="text-secondary mt-3 mb-0">
-              Your privacy matters to us. This Privacy Policy explains how
-              FoundMet collects, uses, protects, and shares information when
-              you use our platform to discover founders, connect with
-              potential co-founders, communicate, and build startup
-              relationships.
+              Your privacy, security, and trust matter to us. This Privacy
+              Policy explains how FoundMet collects, uses, protects, stores,
+              and shares information when you use our platform to discover
+              founders, connect with professionals, communicate, and build
+              startup relationships.
             </p>
           </div>
 
@@ -39,413 +41,631 @@ export default function Privacy() {
             {/* 1 */}
             <section>
               <h5 className="fw-bold text-main">
-                1. Information We Collect
+                1. About This Privacy Policy
               </h5>
 
-              <p className="small">
-                When you create an account or use FoundMet, we may collect
-                information that you voluntarily provide to us, including:
-              </p>
-
-              <ul className="small">
-                <li>Name and display name</li>
-                <li>Email address</li>
-                <li>Profile photo</li>
-                <li>Password or authentication information</li>
-                <li>City or approximate location</li>
-                <li>Startup idea or startup description</li>
-                <li>Startup stage</li>
-                <li>Skills and experience</li>
-                <li>Roles or co-founder positions you are looking for</li>
-                <li>Projects, interests, and professional information</li>
-                <li>Optional mobile phone number</li>
-                <li>Posts, images, messages, and other content you submit</li>
-              </ul>
-
               <p className="small mb-0">
-                We aim to collect only information that is reasonably
-                necessary to provide and improve FoundMet.
+                This Privacy Policy explains how information is handled when
+                you access or use FoundMet, including our website,
+                applications, accounts, profiles, messaging systems,
+                connection features, and other services provided through the
+                FoundMet platform.
               </p>
             </section>
 
             {/* 2 */}
             <section>
               <h5 className="fw-bold text-main">
-                2. How We Use Your Information
+                2. Information We Collect
               </h5>
 
               <p className="small">
-                We may use your information to operate and improve FoundMet,
-                including to:
+                Depending on how you use FoundMet, we may collect information
+                that you voluntarily provide, information generated through
+                your use of the platform, and technical/security information.
               </p>
 
               <ul className="small">
-                <li>Create and manage your account</li>
-                <li>Display your founder profile to other users</li>
-                <li>Help you discover potential co-founders</li>
-                <li>Calculate approximate proximity between users</li>
-                <li>Enable connection requests</li>
-                <li>Enable messaging between accepted connections</li>
-                <li>Process contact-sharing requests</li>
-                <li>Display founder posts and community content</li>
-                <li>Prevent spam, abuse, fraud, and unauthorized activity</li>
-                <li>Maintain platform security</li>
-                <li>Diagnose technical problems</li>
-                <li>Improve our features and user experience</li>
-                <li>Communicate important service-related information</li>
+                <li>Name and display name</li>
+                <li>Email address</li>
+                <li>Profile photo</li>
+                <li>Authentication and account information</li>
+                <li>City or approximate location</li>
+                <li>Startup idea or startup description</li>
+                <li>Startup stage</li>
+                <li>Skills and experience</li>
+                <li>Roles or positions you are looking for</li>
+                <li>Projects and professional information</li>
+                <li>Interests and profile preferences</li>
+                <li>Optional mobile phone number</li>
+                <li>Posts, images and other content you submit</li>
+                <li>Messages and communications made through FoundMet</li>
+                <li>Technical and security information</li>
               </ul>
+
+              <p className="small mb-0">
+                We aim to collect information that is reasonably necessary
+                for providing, securing, maintaining, and improving FoundMet.
+              </p>
             </section>
 
             {/* 3 */}
             <section>
               <h5 className="fw-bold text-main">
-                3. Founder Profiles and Public Information
+                3. How We Use Your Information
               </h5>
 
-              <p className="small mb-0">
-                FoundMet is designed as a founder networking platform.
-                Information that you choose to include in your public profile
-                may be visible to other registered users. This may include
-                your name, profile photo, city, startup information, skills,
-                interests, experience, and other information that you
-                voluntarily publish.
+              <p className="small">
+                We may process information for purposes including:
               </p>
+
+              <ul className="small">
+                <li>Creating and managing your FoundMet account</li>
+                <li>Creating and displaying your founder profile</li>
+                <li>Helping you discover potential collaborators</li>
+                <li>Calculating approximate proximity between users</li>
+                <li>Enabling connection requests</li>
+                <li>Enabling messaging between users</li>
+                <li>Processing contact-sharing requests</li>
+                <li>Displaying community content</li>
+                <li>Preventing spam, fraud and abuse</li>
+                <li>Detecting suspicious or unauthorized activity</li>
+                <li>Maintaining platform and account security</li>
+                <li>Debugging and fixing technical problems</li>
+                <li>Improving features and user experience</li>
+                <li>Communicating important service information</li>
+                <li>Complying with applicable legal obligations</li>
+              </ul>
             </section>
 
             {/* 4 */}
             <section>
               <h5 className="fw-bold text-main">
-                4. Posts and Community Content
+                4. Founder Profiles and Information Visible to Users
               </h5>
 
               <p className="small mb-0">
-                If you publish a post, startup idea, project, image, or other
-                community content, that information may be visible to other
-                FoundMet users depending on the visibility settings and
-                functionality of the platform.
+                FoundMet is a networking platform. Information that you
+                voluntarily include in your profile may be visible to other
+                registered users depending on the functionality and visibility
+                settings of the platform.
               </p>
 
-              <p className="small mb-0 mt-2">
-                Please avoid publishing passwords, financial information,
-                government identification numbers, private credentials, or
-                other sensitive information in public posts.
+              <p className="small mt-2 mb-0">
+                This may include your name, profile photo, city, startup
+                information, skills, interests, experience, professional
+                information, and other information that you choose to publish.
               </p>
             </section>
 
             {/* 5 */}
             <section>
               <h5 className="fw-bold text-main">
-                5. Proximity and Location Information
+                5. Startup Ideas and Confidential Information
               </h5>
 
-              <p className="small mb-0">
-                FoundMet may use your city or approximate location to help
-                identify potential founders in your area. For example, the
-                platform may use approximate distance ranges such as
-                "within 50–80 km" to improve founder discovery.
+              <p className="small">
+                FoundMet may allow users to describe startup ideas, projects,
+                businesses, skills, experience, or other professional
+                information.
               </p>
 
-              <p className="small mb-0 mt-2">
-                FoundMet does not intend to publicly display your precise
-                residential address or continuously broadcast your real-time
-                GPS location to other users.
+              <p className="small">
+                You should carefully consider what information you publish.
+                FoundMet cannot guarantee that another user will keep
+                information confidential after you voluntarily disclose it to
+                that user.
+              </p>
+
+              <p className="small mb-0">
+                If an idea, business plan, source code, invention, trade secret,
+                strategy, customer information, or other information is
+                confidential or commercially sensitive, you should consider
+                appropriate legal and technical protections before disclosing
+                it.
               </p>
             </section>
 
             {/* 6 */}
             <section>
               <h5 className="fw-bold text-main">
-                6. Mobile Number Protection
+                6. Your Intellectual Property
               </h5>
 
+              <p className="small">
+                Subject to applicable law and any separate agreement between
+                you and FoundMet, FoundMet does not claim ownership of your
+                original startup ideas, source code, business plans, documents,
+                designs, inventions, trademarks, or other intellectual
+                property merely because you submit or describe them through
+                the platform.
+              </p>
+
               <p className="small mb-0">
-                Your mobile phone number is treated as private information.
-                It is not intended to be publicly displayed on your founder
-                profile.
-              </p>
-
-              <p className="small mb-0 mt-2">
-                Depending on the platform's connection and contact-sharing
-                functionality, your number may only be shared with another
-                user after the appropriate connection and contact-sharing
-                permissions have been granted.
-              </p>
-
-              <p className="small mb-0 mt-2">
-                Users should not attempt to bypass FoundMet's privacy
-                controls to obtain another person's private contact
-                information.
+                Your use of FoundMet does not automatically transfer ownership
+                of your intellectual property to FoundMet.
               </p>
             </section>
 
             {/* 7 */}
             <section>
               <h5 className="fw-bold text-main">
-                7. Connections and Messaging
+                7. FoundMet Name, Logo, Brand and Platform Intellectual
+                Property
               </h5>
 
-              <p className="small mb-0">
-                FoundMet may allow users to send connection requests and
-                communicate with accepted connections. Information shared
-                through messages is provided by users and may be processed
-                by FoundMet to deliver, secure, and maintain the messaging
-                service.
+              <p className="small">
+                The FoundMet name, logo, branding, visual identity, website
+                design, application interface, software, source code,
+                databases, platform architecture, graphics, text, trademarks,
+                service marks, and other materials created or provided by
+                FoundMet are owned by or licensed to FoundMet, except where
+                otherwise stated.
               </p>
 
-              <p className="small mb-0 mt-2">
-                You should exercise reasonable judgment before sharing
-                confidential business information, intellectual property,
-                passwords, financial information, or other sensitive
-                information with another user.
+              <p className="small mb-0">
+                Nothing in these Terms grants you ownership or an unrestricted
+                licence to copy, reproduce, modify, distribute, sell,
+                commercialize, reverse engineer, impersonate, or otherwise
+                exploit FoundMet's intellectual property without appropriate
+                authorization.
               </p>
             </section>
 
             {/* 8 */}
             <section>
               <h5 className="fw-bold text-main">
-                8. Passwords and Account Security
+                8. Unauthorized Access, Scraping and Data Extraction
               </h5>
 
-              <p className="small mb-0">
-                Passwords should be securely stored using appropriate
-                security practices. We do not intentionally display your
-                password to other users.
+              <p className="small">
+                You must not attempt to obtain unauthorized access to FoundMet
+                systems, accounts, databases, APIs, source code, infrastructure
+                or security mechanisms.
               </p>
 
-              <p className="small mb-0 mt-2">
-                You are responsible for keeping your account credentials
-                confidential and for notifying us if you believe that your
-                account has been accessed without authorization.
+              <p className="small">
+                Unauthorized scraping, automated extraction, bulk copying,
+                harvesting of user information, database extraction, reverse
+                engineering, credential attacks, circumvention of access
+                controls, or attempts to reproduce substantial parts of the
+                FoundMet platform are prohibited.
+              </p>
+
+              <p className="small mb-0">
+                FoundMet may investigate suspected unauthorized activity,
+                preserve relevant security information, restrict or terminate
+                accounts, and take appropriate civil, criminal, regulatory or
+                other legal action or make reports to appropriate authorities
+                where permitted or required by applicable Indian law.
               </p>
             </section>
 
             {/* 9 */}
             <section>
               <h5 className="fw-bold text-main">
-                9. Cookies and Technical Information
+                9. Misuse of FoundMet Name or Logo
               </h5>
 
-              <p className="small mb-0">
-                FoundMet may use cookies, authentication tokens, local
-                storage, logs, and similar technologies to keep users
-                authenticated, maintain sessions, improve security, and
-                understand technical problems.
+              <p className="small">
+                No person may represent themselves as FoundMet, falsely claim
+                to be associated with FoundMet, or use the FoundMet name,
+                logo, branding, domain identity, or other protected brand
+                elements in a misleading manner.
               </p>
 
-              <p className="small mb-0 mt-2">
-                We may also collect technical information such as browser
-                type, device information, IP address, operating system,
-                timestamps, and basic interaction or error information.
+              <p className="small mb-0">
+                Unauthorized copying, impersonation, passing off, misleading
+                use, or other infringement of FoundMet intellectual property
+                may result in platform enforcement and may be pursued through
+                appropriate legal remedies available under applicable law.
               </p>
             </section>
 
             {/* 10 */}
             <section>
               <h5 className="fw-bold text-main">
-                10. IP Addresses and Security Logs
+                10. Posts and Community Content
               </h5>
 
-              <p className="small mb-0">
-                For security, abuse prevention, debugging, and operational
-                purposes, FoundMet may record information such as IP
-                addresses, login attempts, timestamps, and security events.
+              <p className="small">
+                If you publish a post, startup description, project,
+                photograph, message, or other content, that information may be
+                visible to other users according to the functionality and
+                visibility settings of the platform.
               </p>
 
-              <p className="small mb-0 mt-2">
-                Such information may be used to investigate suspicious
-                activity, protect accounts, and maintain the reliability of
-                the platform.
+              <p className="small mb-0">
+                Do not publish passwords, authentication credentials, financial
+                information, government identification numbers, confidential
+                documents, or other sensitive information in publicly visible
+                areas.
               </p>
             </section>
 
             {/* 11 */}
             <section>
               <h5 className="fw-bold text-main">
-                11. How We Share Information
+                11. Location and Proximity Information
               </h5>
 
+              <p className="small">
+                FoundMet may use city-level or approximate location information
+                to help users discover potential founders or collaborators
+                nearby.
+              </p>
+
               <p className="small mb-0">
-                We do not intend to sell your personal information as a
-                product.
+                For example, FoundMet may use approximate distance ranges such
+                as 50–80 km for discovery. FoundMet does not intend to publicly
+                display your precise residential address or continuously
+                broadcast your real-time GPS location to other users.
               </p>
-
-              <p className="small mt-2">
-                Information may be disclosed when reasonably necessary to:
-              </p>
-
-              <ul className="small">
-                <li>Provide FoundMet services</li>
-                <li>Operate hosting, database, storage, or infrastructure services</li>
-                <li>Protect the security of the platform</li>
-                <li>Investigate abuse, fraud, or violations of our policies</li>
-                <li>Comply with applicable law or lawful requests</li>
-                <li>Protect the rights and safety of FoundMet and its users</li>
-              </ul>
             </section>
 
             {/* 12 */}
             <section>
               <h5 className="fw-bold text-main">
-                12. Third-Party Services
+                12. Mobile Number Protection
               </h5>
 
-              <p className="small mb-0">
-                FoundMet may rely on third-party providers for services such
-                as hosting, databases, authentication, image or file
-                storage, analytics, email delivery, security, and other
-                infrastructure.
+              <p className="small">
+                Your mobile number is treated as private account information
+                and is not intended to be publicly displayed on your profile.
               </p>
 
-              <p className="small mb-0 mt-2">
-                These providers may process information on our behalf as
-                necessary to provide their services. We aim to work with
-                providers that maintain reasonable security and privacy
-                practices.
+              <p className="small mb-0">
+                Where contact-sharing functionality is available, your number
+                may only be shared through the applicable FoundMet permission
+                or request process. Attempting to bypass these controls to
+                obtain another user's private contact information is
+                prohibited.
               </p>
             </section>
 
             {/* 13 */}
             <section>
               <h5 className="fw-bold text-main">
-                13. Data Security
+                13. Connections and Messaging
               </h5>
 
-              <p className="small mb-0">
-                We use reasonable technical and organizational measures to
-                protect information from unauthorized access, alteration,
-                disclosure, or destruction.
+              <p className="small">
+                FoundMet may allow users to send connection requests and
+                communicate with accepted connections.
               </p>
 
-              <p className="small mb-0 mt-2">
-                However, no website, application, database, or internet
-                transmission can be guaranteed to be completely secure.
-                Therefore, we cannot guarantee absolute security.
+              <p className="small mb-0">
+                Messages may be processed by FoundMet as necessary to deliver,
+                secure, maintain, moderate, investigate abuse, and operate the
+                messaging service, subject to applicable law and our policies.
               </p>
             </section>
 
             {/* 14 */}
             <section>
               <h5 className="fw-bold text-main">
-                14. Data Retention
+                14. Technical, Device and Security Information
               </h5>
 
-              <p className="small mb-0">
-                We retain information for as long as reasonably necessary to
-                provide FoundMet services, maintain security, comply with
-                legal obligations, resolve disputes, enforce agreements, and
-                maintain appropriate business records.
+              <p className="small">
+                We may collect technical information such as IP address,
+                browser type, operating system, device information, timestamps,
+                login attempts, error information, authentication events,
+                security events, and other information reasonably required to
+                operate and protect the platform.
               </p>
 
-              <p className="small mb-0 mt-2">
-                When information is no longer reasonably required, we may
-                delete or anonymize it, subject to applicable legal and
-                operational requirements.
+              <p className="small mb-0">
+                Security information may be used to detect suspicious
+                activity, investigate unauthorized access, prevent abuse,
+                protect accounts, troubleshoot problems, and maintain platform
+                reliability.
               </p>
             </section>
 
             {/* 15 */}
             <section>
               <h5 className="fw-bold text-main">
-                15. Account Deletion
+                15. Cookies, Local Storage and Similar Technologies
               </h5>
 
               <p className="small mb-0">
-                You may request deletion of your FoundMet account and
-                associated personal information through the available
-                account functionality or by contacting us.
-              </p>
-
-              <p className="small mb-0 mt-2">
-                Some information may need to be retained where required by
-                law, necessary for security, fraud prevention, dispute
-                resolution, or legitimate operational purposes.
+                FoundMet may use cookies, local storage, session storage,
+                authentication mechanisms, logs, and similar technologies to
+                maintain sessions, remember preferences, provide functionality,
+                improve security, and diagnose technical problems.
               </p>
             </section>
 
             {/* 16 */}
             <section>
               <h5 className="fw-bold text-main">
-                16. Your Responsibility
+                16. How We Share Information
               </h5>
 
-              <p className="small mb-0">
-                You are responsible for the information you choose to publish
-                on FoundMet. Before sharing information with another founder,
-                consider whether it contains confidential business details,
-                intellectual property, personal information, or other
-                information that should not be publicly disclosed.
+              <p className="small">
+                FoundMet does not intend to sell personal information as a
+                product.
               </p>
+
+              <p className="small">
+                Information may be disclosed where reasonably necessary to:
+              </p>
+
+              <ul className="small">
+                <li>Provide and operate FoundMet services</li>
+                <li>Operate hosting and infrastructure</li>
+                <li>Provide database and storage services</li>
+                <li>Maintain security and prevent abuse</li>
+                <li>Investigate fraud or policy violations</li>
+                <li>Respond to lawful requests</li>
+                <li>Comply with applicable legal obligations</li>
+                <li>Protect FoundMet, users, or third parties</li>
+              </ul>
             </section>
 
             {/* 17 */}
             <section>
               <h5 className="fw-bold text-main">
-                17. Children's Privacy
+                17. Third-Party Service Providers
               </h5>
 
+              <p className="small">
+                FoundMet may use third-party providers for hosting, cloud
+                infrastructure, databases, authentication, storage, email,
+                analytics, security, communication, and other technical
+                services.
+              </p>
+
               <p className="small mb-0">
-                FoundMet is intended for users who are legally permitted to
-                use the service. We do not knowingly collect personal
-                information from children in violation of applicable law.
+                Such providers may process information on behalf of FoundMet
+                where necessary to provide their services. We seek to use
+                appropriate providers and security measures consistent with
+                applicable requirements.
               </p>
             </section>
 
             {/* 18 */}
             <section>
               <h5 className="fw-bold text-main">
-                18. Changes to This Privacy Policy
+                18. Data Security
               </h5>
 
-              <p className="small mb-0">
-                We may update this Privacy Policy from time to time as
-                FoundMet develops new features, changes its services, or as
-                legal and regulatory requirements evolve.
+              <p className="small">
+                FoundMet uses reasonable technical and organizational
+                safeguards intended to protect personal information and
+                platform systems against unauthorized access, misuse,
+                alteration, disclosure, or destruction.
               </p>
 
-              <p className="small mb-0 mt-2">
-                When we make material changes, we may update the "Last
-                Updated" date displayed at the beginning of this policy.
+              <p className="small mb-0">
+                However, no internet service, database, application, or
+                electronic transmission can be guaranteed to be completely
+                secure. Therefore, we cannot promise absolute security.
               </p>
             </section>
 
             {/* 19 */}
             <section>
               <h5 className="fw-bold text-main">
-                19. Contact Us
+                19. Data Retention
               </h5>
 
               <p className="small mb-0">
-                If you have questions, concerns, privacy requests, or
-                security-related issues regarding FoundMet, please contact
-                the FoundMet team through the official contact channel
-                provided on our platform.
+                We may retain information for as long as reasonably necessary
+                to provide the service, maintain security, prevent abuse,
+                resolve disputes, comply with legal obligations, enforce our
+                agreements, and maintain appropriate business records.
               </p>
             </section>
 
-            {/* Disclaimer */}
-            <section className="border-top pt-4">
+            {/* 20 */}
+            <section>
               <h5 className="fw-bold text-main">
-                20. Important Notice
+                20. Account Deletion and Data Deletion
+              </h5>
+
+              <p className="small">
+                Users may request account deletion through available FoundMet
+                functionality or by contacting our support team.
+              </p>
+
+              <p className="small mb-0">
+                Where applicable, personal information may be deleted,
+                anonymized, or otherwise handled according to our retention
+                obligations and applicable law. Certain information may need to
+                be retained for legal, security, fraud-prevention, dispute
+                resolution, or other lawful purposes.
+              </p>
+            </section>
+
+            {/* 21 */}
+            <section>
+              <h5 className="fw-bold text-main">
+                21. Data Protection Rights
+              </h5>
+
+              <p className="small">
+                Subject to applicable Indian data-protection law, users may
+                have rights relating to their personal data, including rights
+                concerning access to information, correction, deletion,
+                withdrawal of consent where consent is the applicable basis,
+                and grievance redressal.
+              </p>
+
+              <p className="small mb-0">
+                Requests may be submitted through our official support channel.
+                We may take reasonable steps to verify the identity of the
+                requester before processing certain requests.
+              </p>
+            </section>
+
+            {/* 22 */}
+            <section>
+              <h5 className="fw-bold text-main">
+                22. Children's Privacy
               </h5>
 
               <p className="small mb-0">
-                FoundMet is a networking and collaboration platform designed
-                to help founders discover and connect with potential
-                co-founders. FoundMet does not guarantee that any user is
-                genuine, trustworthy, qualified, or suitable for a particular
-                business relationship.
+                FoundMet is intended for users aged 18 years or older unless
+                FoundMet expressly provides otherwise in accordance with
+                applicable law. We do not knowingly process children's personal
+                data contrary to applicable legal requirements.
+              </p>
+            </section>
+
+            {/* 23 */}
+            <section>
+              <h5 className="fw-bold text-main">
+                23. Security Incidents and Unauthorized Access
+              </h5>
+
+              <p className="small">
+                If we become aware of a security incident affecting personal
+                data, FoundMet may take reasonable steps to investigate,
+                contain, remediate, and notify relevant persons or authorities
+                where required by applicable law.
               </p>
 
-              <p className="small mb-0 mt-2">
-                Users should independently verify information and exercise
-                appropriate caution before entering into business
-                relationships, sharing confidential information, transferring
-                money, or signing agreements with another user.
+              <p className="small mb-0">
+                Users should immediately report suspected unauthorized account
+                access, data exposure, phishing, impersonation, or security
+                vulnerabilities to FoundMet through our official support
+                channel.
               </p>
+            </section>
+
+            {/* 24 */}
+            <section>
+              <h5 className="fw-bold text-main">
+                24. Legal Protection of FoundMet's Platform and Assets
+              </h5>
+
+              <p className="small">
+                FoundMet takes unauthorized access, data theft, scraping,
+                source-code extraction, database extraction, credential
+                attacks, impersonation, unauthorized commercial copying, and
+                misuse of the FoundMet name or logo seriously.
+              </p>
+
+              <p className="small">
+                Where appropriate, FoundMet may collect and preserve relevant
+                technical and security records, restrict accounts, terminate
+                access, issue notices, cooperate with lawful investigations,
+                and pursue available legal remedies.
+              </p>
+
+              <p className="small mb-0">
+                Depending on the conduct and applicable law, unauthorized
+                activity may give rise to civil, criminal, regulatory, or
+                contractual consequences. This section does not create new
+                criminal offences or guarantee that any particular legal
+                remedy will apply to a particular incident.
+              </p>
+            </section>
+
+            {/* 25 */}
+            <section>
+              <h5 className="fw-bold text-main">
+                25. Third-Party Intellectual Property
+              </h5>
+
+              <p className="small mb-0">
+                Users must not upload, publish, reproduce, or distribute
+                content that infringes another person's copyright, trademark,
+                patent, trade secret, privacy, publicity, or other legal
+                rights. FoundMet may take appropriate action upon receiving a
+                valid complaint or becoming aware of an apparent violation.
+              </p>
+            </section>
+
+            {/* 26 */}
+            <section>
+              <h5 className="fw-bold text-main">
+                26. Legal Requests and Disclosure
+              </h5>
+
+              <p className="small mb-0">
+                FoundMet may disclose information when required or permitted by
+                applicable law, lawful government or law-enforcement requests,
+                court orders, or where reasonably necessary to protect the
+                rights, safety, security, and property of FoundMet, its users,
+                or others.
+              </p>
+            </section>
+
+            {/* 27 */}
+            <section>
+              <h5 className="fw-bold text-main">
+                27. Changes to This Privacy Policy
+              </h5>
+
+              <p className="small mb-0">
+                FoundMet may update this Privacy Policy as the platform,
+                technology, business model, or applicable legal requirements
+                evolve. We may update the "Last Updated" date and, where
+                required, provide additional notice or obtain consent for
+                material changes.
+              </p>
+            </section>
+
+            {/* 28 */}
+            <section>
+              <h5 className="fw-bold text-main">
+                28. Contact, Privacy Requests and Security Reports
+              </h5>
+
+              <p className="small">
+                For privacy questions, account concerns, data requests,
+                security reports, suspected data misuse, impersonation,
+                unauthorized copying, or other concerns, contact:
+              </p>
+
+              <div className="small">
+                <strong className="text-main">
+                  FoundMet Support
+                </strong>
+                <br />
+
+                Email:{" "}
+                <a
+                  href="mailto:supportfoundmet@gmail.com"
+                  className="text-primary text-decoration-none"
+                >
+                  supportfoundmet@gmail.com
+                </a>
+              </div>
+
+              <p className="small mt-2 mb-0">
+                Please provide sufficient information for us to understand and
+                investigate your request or report.
+              </p>
+            </section>
+
+            {/* Important Notice */}
+            <section className="border-top pt-4">
+              <div className="alert alert-light border small mb-0">
+                <strong className="text-main">
+                  Important Legal Notice:
+                </strong>{" "}
+                This Privacy Policy describes FoundMet's intended privacy and
+                security practices and should be read together with the
+                FoundMet Terms of Service and Cookie Policy. It does not create
+                rights or obligations beyond those provided by applicable law.
+                Where mandatory Indian law provides a different requirement,
+                the applicable law will prevail.
+              </div>
             </section>
 
             {/* Navigation */}
             <div className="border-top pt-4 mt-2 d-flex flex-column flex-md-row justify-content-between gap-2">
+              <Link
+                to="/terms"
+                className="btn btn-outline-secondary rounded-pill px-4"
+              >
+                Terms & Conditions
+              </Link>
+
               <Link
                 to="/register"
                 className="btn btn-foundmet rounded-pill px-4"
@@ -467,4 +687,3 @@ export default function Privacy() {
     </div>
   );
 }
-
