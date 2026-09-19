@@ -1,4 +1,5 @@
 import axios from "axios";
+import { disconnectSocket } from "./socket.js";
 
 const configuredApiBaseUrl =
   import.meta.env.VITE_API_BASE_URL ||
@@ -52,5 +53,50 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+/**
+ * Deep purge of all client authentication state, cached profile,
+ * connection status, tokens, drafts, and active sockets.
+ */
+export function purgeClientAuthState() {
+  // Remove all user and auth items from localStorage
+  const keysToRemove = [
+    "foundmet_user",
+    "foundmet_access_token",
+    "foundmet_admin_token",
+    "foundmet_connections",
+    "foundmet_shared_phones",
+    "foundmet_user_ideas",
+    "foundmet_reg_data",
+    "foundmet_chat_history",
+  ];
+
+  keysToRemove.forEach((k) => {
+    try {
+      localStorage.removeItem(k);
+    } catch {
+      /* ignore */
+    }
+  });
+
+  // Clear sessionStorage completely
+  try {
+    sessionStorage.clear();
+  } catch {
+    /* ignore */
+  }
+
+  // Disconnect any active Socket.IO connection
+  try {
+    disconnectSocket();
+  } catch {
+    /* ignore */
+  }
+
+  // Clear Axios common Authorization header
+  if (api.defaults?.headers?.common) {
+    delete api.defaults.headers.common["Authorization"];
+  }
+}
 
 export default api;

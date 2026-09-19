@@ -149,7 +149,7 @@ export default function Header() {
                   Explore Feed
                 </Link>
               </li>
-              
+
               {currentUser && (
                 <li className="nav-item">
                   <Link
@@ -225,6 +225,17 @@ export default function Header() {
                 </div>
               ) : (
                 <div className="d-flex flex-column flex-lg-row align-items-stretch align-items-lg-center gap-2">
+                  <a
+                    href="https://docs.google.com/forms/d/e/1FAIpQLScJfFBWQqfyek-Y_y9Ai42mLKRtPRu7G5nX2ppi2xn_XzLXOA/viewform?usp=publish-editor"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-outline-warning btn-sm rounded-pill px-3"
+                    title="Report an issue with FoundMet"
+                  >
+                    <i className="bi bi-bug me-1"></i>
+                    Report Issue
+                  </a>
+
                   <Link
                     to="/login"
                     onClick={() => setMenuOpen(false)}
@@ -232,6 +243,7 @@ export default function Header() {
                   >
                     Sign In
                   </Link>
+
                   <Link
                     to="/register"
                     onClick={() => setMenuOpen(false)}
@@ -239,6 +251,7 @@ export default function Header() {
                   >
                     Join Free
                   </Link>
+
                   <Link
                     to="/superadmin"
                     onClick={() => setMenuOpen(false)}
