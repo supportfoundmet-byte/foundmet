@@ -200,10 +200,7 @@ export default function Explore() {
 
   // Open Chat window: Only permitted after login AND once connected
   const handleOpenChat = (founder) => {
-    if (!currentUser) {
-      setAuthPromptFounder(founder);
-      return;
-    }
+   
 
     if (normalizeConnectionStatus(connections[founder._id]) !== "connected") {
       showToast(

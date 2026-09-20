@@ -1,15 +1,19 @@
-
 import { Link } from "react-router-dom";
 import logo from "../assets/logo.jpeg";
 
 export default function Footer() {
   const reportIssueUrl =
-    "https://docs.google.com/forms/d/e/1FAIpQLScJfFBWQqfyek-Y_y9Ai42mLKRtPRu7G5nX2ppi2xn_XzLXOA/viewform?usp=publish-editor";
+    "https://drive.google.com/file/d/1w8p3nsLPPi8iAGztNcqh_pc_bFrQhyjW/view?usp=sharing";
+
+  // FoundMet Official Intellectual Property Notice
+  const intellectualPropertyNoticeUrl =
+    "https://drive.google.com/file/d/1w8p3nsLPPi8iAGztNcqh_pc_bFrQhyjW/view?usp=sharing";
 
   return (
     <footer className="mt-auto py-5 bg-white border-top site-footer">
       <div className="container">
         <div className="row g-4">
+
           {/* Brand & Description */}
           <div className="col-12 col-md-5">
             <div className="d-flex align-items-center gap-2 mb-2">
@@ -25,8 +29,12 @@ export default function Footer() {
               />
 
               <div className="d-flex align-items-center gap-2">
-                <span className="fw-bold fs-5 text-main">FoundMet</span>
+                <span className="fw-bold fs-5 text-main">
+                  FoundMet
+                </span>
+
                 <span className="text-secondary">•</span>
+
                 <span className="text-secondary">
                   Built for people who build.
                 </span>
@@ -34,9 +42,9 @@ export default function Footer() {
             </div>
 
             <p className="text-secondary small mb-2">
-              FoundMet helps people discover like-minded builders, founders and
-              professionals to create meaningful teams and turn ideas into
-              reality.
+              FoundMet helps people discover like-minded builders, founders
+              and professionals to create meaningful teams and turn ideas
+              into reality.
             </p>
 
             <address
@@ -49,13 +57,18 @@ export default function Footer() {
 
           {/* Quick Links */}
           <div className="col-6 col-md-3">
-            <h6 className="fw-bold text-main mb-3">Quick Links</h6>
+            <h6 className="fw-bold text-main mb-3">
+              Quick Links
+            </h6>
 
             <nav
               className="d-flex flex-column gap-2"
               aria-label="Footer navigation"
             >
-              <Link to="/" className="text-secondary text-decoration-none">
+              <Link
+                to="/"
+                className="text-secondary text-decoration-none"
+              >
                 Home
               </Link>
 
@@ -89,9 +102,11 @@ export default function Footer() {
             </nav>
           </div>
 
-          {/* Legal & Support */}
+          {/* Support & Legal */}
           <div className="col-6 col-md-4">
-            <h6 className="fw-bold text-main mb-3">Support & Legal</h6>
+            <h6 className="fw-bold text-main mb-3">
+              Support & Legal
+            </h6>
 
             <nav
               className="d-flex flex-column gap-2"
@@ -117,6 +132,17 @@ export default function Footer() {
               >
                 Cookie Policy
               </Link>
+
+              {/* Intellectual Property Notice */}
+              <a
+                href={intellectualPropertyNoticeUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-warning-emphasis text-decoration-none fw-semibold"
+              >
+                <i className="bi bi-shield-exclamation me-2"></i>
+                Intellectual Property Notice
+              </a>
 
               {/* Report Bug */}
               <a
@@ -165,4 +191,3 @@ export default function Footer() {
     </footer>
   );
 }
-

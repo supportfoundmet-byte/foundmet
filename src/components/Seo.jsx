@@ -1,60 +1,237 @@
 import { useEffect } from "react";
 
-export const SITE_URL = (import.meta.env.VITE_SITE_URL || "https://foundmet.com").replace(/\/$/, "");
+/* =========================================================
+   FoundMet SEO Configuration
+========================================================= */
+
+export const SITE_URL = (
+  import.meta.env.VITE_SITE_URL || "https://foundmet.com"
+).replace(/\/+$/, "");
+
 export const SITE_NAME = "FoundMet";
+
 export const DEFAULT_DESCRIPTION =
   "FoundMet helps founders find co-founders nearby, connect privately, and build startups with geo-aware matching across India and globally.";
 
-function upsertMeta(selector, attributes) {
-  let element = document.head.querySelector(selector);
+export const DEFAULT_IMAGE = `${SITE_URL}/og-image.png`;
+
+/* =========================================================
+   Helpers
+========================================================= */
+
+function upsertMeta(attribute, key, value) {
+  if (!value) return;
+
+  let element = document.head.querySelector(
+    `meta[${attribute}="${key}"]`
+  );
+
   if (!element) {
-    element = document.createElement(attributes.property?.startsWith("og:") || attributes.name?.startsWith("og:") ? "meta" : "meta");
+    element = document.createElement("meta");
+    element.setAttribute(attribute, key);
     document.head.appendChild(element);
   }
-  Object.entries(attributes).forEach(([key, value]) => {
-    if (value) element.setAttribute(key, value);
-  });
+
+  element.setAttribute("content", value);
 }
+
+function upsertLink(rel, href) {
+  if (!href) return;
+
+  let element = document.head.querySelector(
+    `link[rel="${rel}"]`
+  );
+
+  if (!element) {
+    element = document.createElement("link");
+    element.setAttribute("rel", rel);
+    document.head.appendChild(element);
+  }
+
+  element.setAttribute("href", href);
+}
+
+function normalizePath(path = "/") {
+  if (!path || path === "/") {
+    return "/";
+  }
+
+  return path.startsWith("/") ? path : `/${path}`;
+}
+
+function buildCanonicalUrl(path) {
+  const normalizedPath = normalizePath(path);
+
+  return normalizedPath === "/"
+    ? SITE_URL
+    : `${SITE_URL}${normalizedPath}`;
+}
+
+/* =========================================================
+   JSON-LD
+========================================================= */
+
+function updateJsonLd(jsonLd) {
+  const scriptId = "foundmet-jsonld";
+
+  const existingScript = document.getElementById(scriptId);
+
+  if (!jsonLd) {
+    existingScript?.remove();
+    return;
+  }
+
+  const script =
+    existingScript || document.createElement("script");
+
+  script.id = scriptId;
+  script.type = "application/ld+json";
+
+  script.textContent = JSON.stringify(jsonLd);
+
+  if (!existingScript) {
+    document.head.appendChild(script);
+  }
+}
+
+/* =========================================================
+   SEO Component
+========================================================= */
 
 export default function Seo({
   title = `${SITE_NAME} | Find your co-founder nearby`,
   description = DEFAULT_DESCRIPTION,
   path = "/",
   type = "website",
-  jsonLd,
+  image = DEFAULT_IMAGE,
+  robots = "index, follow",
+  jsonLd = null,
 }) {
   useEffect(() => {
-    const url = `${SITE_URL}${path}`;
-    document.title = title;
-    upsertMeta('meta[name="description"]', { name: "description", content: description });
-    upsertMeta('meta[property="og:title"]', { property: "og:title", content: title });
-    upsertMeta('meta[property="og:description"]', { property: "og:description", content: description });
-    upsertMeta('meta[property="og:url"]', { property: "og:url", content: url });
-    upsertMeta('meta[property="og:type"]', { property: "og:type", content: type });
-    upsertMeta('meta[name="twitter:title"]', { name: "twitter:title", content: title });
-    upsertMeta('meta[name="twitter:description"]', { name: "twitter:description", content: description });
-    let canonical = document.head.querySelector('link[rel="canonical"]');
-    if (!canonical) {
-      canonical = document.createElement("link");
-      canonical.setAttribute("rel", "canonical");
-      document.head.appendChild(canonical);
-    }
-    canonical.setAttribute("href", url);
+    const canonicalUrl = buildCanonicalUrl(path);
 
-    const scriptId = "foundmet-jsonld";
-    let script = document.getElementById(scriptId);
-    if (jsonLd) {
-      if (!script) {
-        script = document.createElement("script");
-        script.id = scriptId;
-        script.type = "application/ld+json";
-        document.head.appendChild(script);
-      }
-      script.textContent = JSON.stringify(jsonLd);
-    } else if (script) {
-      script.remove();
-    }
-  }, [title, description, path, type, jsonLd]);
+    /* ---------------------------------------------
+       Browser title
+    --------------------------------------------- */
+
+    document.title = title;
+
+    /* ---------------------------------------------
+       Basic SEO
+    --------------------------------------------- */
+
+    upsertMeta(
+      "name",
+      "description",
+      description
+    );
+
+    upsertMeta(
+      "name",
+      "robots",
+      robots
+    );
+
+    /* ---------------------------------------------
+       Open Graph
+    --------------------------------------------- */
+
+    upsertMeta(
+      "property",
+      "og:title",
+      title
+    );
+
+    upsertMeta(
+      "property",
+      "og:description",
+      description
+    );
+
+    upsertMeta(
+      "property",
+      "og:url",
+      canonicalUrl
+    );
+
+    upsertMeta(
+      "property",
+      "og:type",
+      type
+    );
+
+    upsertMeta(
+      "property",
+      "og:site_name",
+      SITE_NAME
+    );
+
+    upsertMeta(
+      "property",
+      "og:image",
+      image
+    );
+
+    /* ---------------------------------------------
+       Twitter / X
+    --------------------------------------------- */
+
+    upsertMeta(
+      "name",
+      "twitter:card",
+      "summary_large_image"
+    );
+
+    upsertMeta(
+      "name",
+      "twitter:title",
+      title
+    );
+
+    upsertMeta(
+      "name",
+      "twitter:description",
+      description
+    );
+
+    upsertMeta(
+      "name",
+      "twitter:image",
+      image
+    );
+
+    /* ---------------------------------------------
+       Canonical URL
+    --------------------------------------------- */
+
+    upsertLink(
+      "canonical",
+      canonicalUrl
+    );
+
+    /* ---------------------------------------------
+       JSON-LD
+    --------------------------------------------- */
+
+    updateJsonLd(jsonLd);
+
+    /* ---------------------------------------------
+       Cleanup
+    --------------------------------------------- */
+
+    return () => {
+      // Don't remove global SEO tags here.
+      // The next page will simply update them.
+    };
+  }, [
+    title,
+    description,
+    path,
+    type,
+    image,
+    robots,
+    jsonLd,
+  ]);
 
   return null;
 }
