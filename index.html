@@ -2,45 +2,204 @@
 <html lang="en-IN">
   <head>
     <meta charset="UTF-8" />
-    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
-    <link rel="icon" href="./src/assets/logo.jpeg" type="image/jpeg" />
-    <link rel="manifest" href="/manifest.webmanifest" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0B5CFF" />
-    <title>FoundMet | Find your co-founder nearby</title>
-    <meta name="description" content="FoundMet helps founders find co-founders nearby, connect privately, and build startups with geo-aware matching across India and globally." />
-    <meta name="keywords" content="co-founder matching, startup India, founder network, Bangalore founders, Delhi NCR startups, geo matching" />
-    <meta name="robots" content="index,follow" />
-    <meta name="author" content="FoundMet" />
-    <meta name="geo.region" content="IN" />
-    <meta name="geo.placename" content="India" />
-    <meta name="ICBM" content="12.9716, 77.5946" />
-    <link rel="canonical" href="https://foundmet.com/" />
-    <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="FoundMet" />
-    <meta property="og:title" content="FoundMet | Find your co-founder nearby" />
-    <meta property="og:description" content="Match with complementary founders within 50–80 km, chat privately after connecting, and build together." />
-    <meta property="og:url" content="https://foundmet.com/" />
-    <meta property="og:locale" content="en_IN" />
-    <meta name="google-site-verification" content="w4VzJ_KBiyvILH0MMZ1mfMZobGR9cXpcKX6eV5bp41k" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="FoundMet | Find your co-founder nearby" />
-    <meta name="twitter:description" content="Geo-aware co-founder matching for people who want to build." />
+
+    <!-- =====================================================
+         Basic
+    ====================================================== -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+
+    <title>FoundMet | Find Your Co-Founder</title>
+
+    <meta
+      name="description"
+      content="FoundMet helps founders, builders, and startup-minded people discover co-founders nearby, connect privately, and build together."
+    />
+
+    <meta
+      name="keywords"
+      content="co-founder matching, find co-founder, startup founders, startup India, founder network, co-founder platform, entrepreneurs"
+    />
+
+    <meta
+      name="author"
+      content="FoundMet"
+    />
+
+    <meta
+      name="robots"
+      content="index, follow"
+    />
+
+    <!-- =====================================================
+         Canonical
+    ====================================================== -->
+    <link
+      rel="canonical"
+      href="https://foundmet.com/"
+    />
+
+    <!-- =====================================================
+         Favicon
+    ====================================================== -->
+    <link
+      rel="icon"
+      href="/favicon.ico"
+      type="image/x-icon"
+    />
+
+    <link
+      rel="shortcut icon"
+      href="/favicon.ico"
+      type="image/x-icon"
+    />
+
+    <!-- =====================================================
+         PWA
+    ====================================================== -->
+    <link
+      rel="manifest"
+      href="/manifest.json"
+    />
+
+    <meta
+      name="theme-color"
+      content="#0B5CFF"
+    />
+
+    <meta
+      name="mobile-web-app-capable"
+      content="yes"
+    />
+
+    <meta
+      name="apple-mobile-web-app-capable"
+      content="yes"
+    />
+
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="default"
+    />
+
+    <meta
+      name="apple-mobile-web-app-title"
+      content="FoundMet"
+    />
+
+    <!-- =====================================================
+         Open Graph
+    ====================================================== -->
+    <meta
+      property="og:type"
+      content="website"
+    />
+
+    <meta
+      property="og:site_name"
+      content="FoundMet"
+    />
+
+    <meta
+      property="og:title"
+      content="FoundMet | Find Your Co-Founder"
+    />
+
+    <meta
+      property="og:description"
+      content="Find co-founders, builders, and startup-minded people nearby and build together."
+    />
+
+    <meta
+      property="og:url"
+      content="https://foundmet.com/"
+    />
+
+    <meta
+      property="og:image"
+      content="https://foundmet.com/og-image.png"
+    />
+
+    <meta
+      property="og:image:alt"
+      content="FoundMet — Find Your Co-Founder"
+    />
+
+    <meta
+      property="og:locale"
+      content="en_IN"
+    />
+
+    <!-- =====================================================
+         Twitter / X
+    ====================================================== -->
+    <meta
+      name="twitter:card"
+      content="summary_large_image"
+    />
+
+    <meta
+      name="twitter:title"
+      content="FoundMet | Find Your Co-Founder"
+    />
+
+    <meta
+      name="twitter:description"
+      content="Find co-founders, builders, and startup-minded people nearby and build together."
+    />
+
+    <meta
+      name="twitter:image"
+      content="https://foundmet.com/og-image.png"
+    />
+
+    <meta
+      name="twitter:image:alt"
+      content="FoundMet — Find Your Co-Founder"
+    />
+
+    <!-- =====================================================
+         Google Search Console
+    ====================================================== -->
+    <meta
+      name="google-site-verification"
+      content="w4VzJ_KBiyvILH0MMZ1mfMZobGR9cXpcKX6eV5bp41k"
+    />
+
+    <!-- =====================================================
+         Structured Data
+    ====================================================== -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "SoftwareApplication",
         "name": "FoundMet",
+        "url": "https://foundmet.com/",
+        "description": "FoundMet helps founders, builders, and startup-minded people discover co-founders nearby and connect privately.",
         "applicationCategory": "BusinessApplication",
         "operatingSystem": "Web",
-        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "INR" },
-        "areaServed": { "@type": "Country", "name": "India" },
-        "description": "FoundMet helps founders find co-founders nearby and collaborate privately."
+        "inLanguage": "en-IN",
+        "areaServed": {
+          "@type": "Country",
+          "name": "India"
+        },
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "INR"
+        }
       }
     </script>
   </head>
+
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+
+    <script
+      type="module"
+      src="/src/main.jsx"
+    ></script>
   </body>
 </html>
