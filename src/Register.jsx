@@ -735,7 +735,7 @@ export default function Register() {
                       "Delhi NCR, India",
                       "Mumbai, India",
                       "Kolkata, India",
-                      "Remote",
+                      
                     ].map((city) => (
                       <button
                         key={city}
