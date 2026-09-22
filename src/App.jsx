@@ -5,6 +5,7 @@ import Explore from "./Explore.jsx";
 import Register from "./Register.jsx";
 import Login from "./Login.jsx";
 import Dashboard from "./Dashboard.jsx";
+import VerifyEmail from "./VerifyEmail.jsx";
 
 import Terms from "./Terms.jsx";
 import Privacy from "./Privacy.jsx";
@@ -32,6 +33,10 @@ const PAGE_SEO = {
   "/login": {
     title: "Sign in | FoundMet",
     description: "Sign in to manage connections, messages, and your founder profile.",
+  },
+  "/verify-email": {
+    title: "Verify your email | FoundMet",
+    description: "Verify your FoundMet account email address.",
   },
   "/dashboard": {
     title: "Dashboard | FoundMet",
@@ -69,6 +74,8 @@ export default function App() {
           <Route path="/explore" element={<Explore />} />
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/verify-email/:token" element={<VerifyEmail />} />
           <Route path="/dashboard" element={<Dashboard />} />
           
           <Route path="/app" element={<Dashboard />} />
